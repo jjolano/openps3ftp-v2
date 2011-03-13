@@ -137,7 +137,7 @@ int sendfile(const char* filename, int sd, int rest)
 			
 			while(lv2FsRead(fd, buf, BUFFER_SIZE, &read) == 0 && read > 0)
 			{
-				if(lv2FsFsync(fd) == -1 || (u64)send(sd, buf, (size_t)read, 0) < read)
+				if((u64)send(sd, buf, (size_t)read, 0) < read)
 				{
 					ret = -1;
 					break;
@@ -170,7 +170,7 @@ int recvfile(const char* filename, int sd, int rest)
 			
 			while((read = (u64)recv(sd, buf, BUFFER_SIZE, MSG_WAITALL)) > 0)
 			{
-				if(lv2FsFsync(fd) == -1 || lv2FsWrite(fd, buf, read, &write) != 0 || write < read)
+				if(lv2FsWrite(fd, buf, read, &write) != 0 || write < read)
 				{
 					ret = -1;
 					break;
