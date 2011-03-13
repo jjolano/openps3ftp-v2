@@ -384,7 +384,7 @@ void opf_clienthandler(u64 arg)
 							char tstr[16];
 							strftime(tstr, 15, "%b %d %H:%M", localtime(&buf.st_mtime));
 							
-							sprintf(buffer, "%s%s%s%s%s%s%s%s%s%s   1 root  root        %llu %s %s\r\n",
+							sprintf(buffer, "%s%s%s%s%s%s%s%s%s%s   1 root nobody     %llu %s %s\r\n",
 								((buf.st_mode & S_IFDIR) != 0) ? "d" : "-", 
 								((buf.st_mode & S_IRUSR) != 0) ? "r" : "-",
 								((buf.st_mode & S_IWUSR) != 0) ? "w" : "-",
@@ -456,7 +456,7 @@ void opf_clienthandler(u64 arg)
 							
 							dirtype[1] = '\0';
 							
-							sprintf(buffer, "type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=root; %s\r\n",
+							sprintf(buffer, "type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
 								dirtype,
 								fis_dir(buf) ? "dir" : "file",
 								fis_dir(buf) ? "d" : "e", (unsigned long long)buf.st_size, tstr,
@@ -522,7 +522,7 @@ void opf_clienthandler(u64 arg)
 						
 						dirtype[1] = '\0';
 						
-						sprintf(buffer, " type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=root; %s\r\n",
+						sprintf(buffer, " type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
 							dirtype,
 							fis_dir(buf) ? "dir" : "file",
 							fis_dir(buf) ? "d" : "e", (unsigned long long)buf.st_size, tstr,
@@ -746,8 +746,8 @@ void opf_clienthandler(u64 arg)
 				
 				if(strcasecmp(cmd, "CHMOD") == 0)
 				{
-					char param3[4];
-					split = ssplit(param2, param3, 3, path, 255);
+					char param3[4], filename[256];
+					split = ssplit(param2, param3, 3, filename, 255);
 					
 					if(split == 1)
 					{
@@ -758,9 +758,9 @@ void opf_clienthandler(u64 arg)
 						perms[3] = param3[2];
 						perms[4] = '\0';
 						
-						abspath(param2, cwd, path);
+						abspath(filename, cwd, path);
 						
-						if(lv2FsChmod(path, strtol(perms, NULL, 8)) == 0)
+						if(lv2FsChmod(path, strtoul(perms, NULL, 8)) == 0)
 						{
 							ssend(conn_s, "250 File permissions successfully set\r\n");
 						}
@@ -1031,8 +1031,6 @@ int main()
 			{
 				print(50, 250, "Warning: writable dev_flash mount detected.", buffers[currentBuffer]->ptr);
 			}
-			
-			usleep(25000000);
 		}
 		
 		flip(currentBuffer);
