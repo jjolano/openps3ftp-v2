@@ -22,7 +22,6 @@ Just a small tutorial on the basics.
 Prerequisites:
 - Custom Firmware (tested on 3.55, but should work for all)
 - A network connection
-- Optional: Internet access (for IP address retrieval)
 
 Installation:
 - Extract the pkg files from the archive and copy them into a USB drive
@@ -38,17 +37,10 @@ Installation:
 - OpenPS3FTP is now installed!
 
 Usage:
-
-    Note:
-    If your console doesn't have internet access and you don't know it's IP 
-    address, you should take note of the IP Address in 
-    Settings > Network Settings > Settings and Connection Status List.
-
 - Launch OpenPS3FTP (found under Network)
 - Wait until you see text on the screen.
-- Connect to your console using an FTP client (such as FileZilla) using the IP 
-  address that is shown on the screen (or what you noted down if you don't have 
-  internet access) with username: root and password: openbox.
+- Connect to your console using an FTP client (such as FileZilla) with the IP 
+  address and port shown on the screen with user root and password openbox.
 - Now that you're connected, you can browse through and manipulate files on 
   your console as if it were a folder on your computer.
 

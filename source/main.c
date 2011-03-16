@@ -27,6 +27,8 @@ const char* AUTHOR	= "jjolano";
 #include <rsx/gcm.h>
 #include <rsx/reality.h>
 
+#include <net/netctl.h>
+
 #include <sys/thread.h>
 
 #include "common.h"
@@ -928,31 +930,27 @@ void opf_clienthandler(u64 arg)
 	sys_ppu_thread_exit(0);	
 }
 
-void opf_setstatusip(u64 arg)
-{
-	int conn_s;
-	if(sconnect("8.8.8.8", 53, &conn_s) == 0)
-	{
-		netSocketInfo p;
-		netGetSockInfo(FD(conn_s), &p, 1);
-		strcat(statustext, inet_ntoa(p.local_adr));
-	}
-	
-	sclose(&conn_s);
-	sys_ppu_thread_exit(0);
-}
-
 void opf_connectionhandler(u64 arg)
 {
-	int list_s = slisten(LISTEN_PORT, 5);
+	netCtlInit();
+	union net_ctl_info info;
+	int list_s = -1;
+	
+	if(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0)
+	{
+		sprintf(statustext, "No Network Connection");
+	}
+	else
+	{
+		list_s = slisten(LISTEN_PORT, 5);
+	}
 	
 	if(list_s > 0)
 	{
 		int conn_s;
 		sys_ppu_thread_t id;
 		
-		sprintf(statustext, "FTP Server Active - Port: %i, IP: ", LISTEN_PORT);
-		sys_ppu_thread_create(&id, opf_setstatusip, 0, 1500, 0x400, 0, "Set Status IP");
+		sprintf(statustext, "FTP Server Active - Port: %i, IP: %s", LISTEN_PORT, info.ip_address);
 		
 		while(exitapp == 0)
 		{
@@ -985,20 +983,19 @@ int main()
 		exists("/dev_wflash") == 0
 		);
 	
-	if(DISABLE_PASS == 0)
+	#if DISABLE_PASS == 0
+	Lv2FsFile fd;
+	if(lv2FsOpen(PASSWD_FILE, LV2_O_RDONLY, &fd, 0, NULL, 0) == 0)
 	{
-		Lv2FsFile fd;
-		if(lv2FsOpen(PASSWD_FILE, LV2_O_RDONLY, &fd, 0, NULL, 0) == 0)
-		{
-			u64 read;
-			lv2FsRead(fd, userpass, 63, &read);
-			lv2FsClose(fd);
-		}
-		else
-		{
-			strcpy(userpass, DEFAULT_PASS);
-		}
+		u64 read;
+		lv2FsRead(fd, userpass, 63, &read);
+		lv2FsClose(fd);
 	}
+	else
+	{
+		strcpy(userpass, DEFAULT_PASS);
+	}
+	#endif
 	
 	sys_ppu_thread_t id;
 	sys_ppu_thread_create(&id, opf_connectionhandler, 0, 1500, 0x400, 0, "FTP Server");
