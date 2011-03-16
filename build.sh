@@ -1,40 +1,42 @@
 #!/bin/sh -e
+# this will build, hash, and zip OpenPS3FTP (nopass and normal versions).
+
 # go to sh script directory
 cd "$(dirname "$0")"
 
-ZIPFILE="openps3ftp.zip"
+OUTDIR="output"
+
 PKGFILE="$(basename $(pwd))"
+ZIPFILE="$OUTDIR/$PKGFILE.zip"
 SEDFILE="./include/common.h"
 
-# clean up directory
-echo "cleaning up..."
-make clean > /dev/null
-rm -f "$ZIPFILE"
+# create directories
+mkdir -p "$OUTDIR"
 
-# make pkg then add it to the zip
+# compile stuff and zip
 ## create 'nopass' version
-echo "compiling 'nopass' version..."
+echo "[make] nopass..."
 sed -i 's/DISABLE_PASS\t[01]/DISABLE_PASS\t1/' "$SEDFILE"
 make pkg > /dev/null
 mv "$PKGFILE.pkg" "$PKGFILE-nopass.pkg"
 mv "$PKGFILE.geohot.pkg" "$PKGFILE-nopass.geohot.pkg"
 
+## print hash
+echo " $(md5sum "$PKGFILE.elf")"
+
 ## create 'normal' version
-echo "compiling 'normal' version..."
+echo "[make] normal..."
 sed -i 's/DISABLE_PASS\t[01]/DISABLE_PASS\t0/' "$SEDFILE"
 make pkg > /dev/null
 
-# create the zip file
-echo "creating $ZIPFILE..."
+## print hash
+echo " $(md5sum "$PKGFILE.elf")"
+
+## create zip
+echo "[zip] $ZIPFILE..."
 touch README COPYING changelog *.pkg
-zip "$ZIPFILE" README COPYING changelog *.pkg
+zip -q "$ZIPFILE" README COPYING changelog *.pkg
 
-# print hashes
-echo "md5sums:"
-md5sum *.pkg "$ZIPFILE"
-
-# done, clean up
-echo "cleaning up..."
-make clean > /dev/null
+# we're done!
 echo "done"
 # end

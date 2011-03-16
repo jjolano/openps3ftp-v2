@@ -41,13 +41,13 @@ void abspath(const char* relpath, const char* cwd, char* abspath)
 int exists(const char* path)
 {
 	Lv2FsStat entry;
-	return lv2FsStat(path, &entry);
+	return sysFsStat(path, &entry);
 }
 
 int is_dir(const char* path)
 {
 	Lv2FsStat entry;
-	lv2FsStat(path, &entry);
+	sysFsStat(path, &entry);
 	return fis_dir(entry);
 }
 
@@ -128,23 +128,23 @@ int sendfile(const char* filename, int sd, int rest)
 	if(buf != NULL)
 	{
 		Lv2FsFile fd;
-		if(lv2FsOpen(filename, LV2_O_RDONLY, &fd, 0, NULL, 0) == 0)
+		if(sysFsOpen(filename, LV2_O_RDONLY, &fd, NULL, 0) == 0)
 		{
 			ret = 0;
 			
 			u64 read, pos;
-			lv2FsLSeek64(fd, (s64)rest, SEEK_SET, &pos);
+			sysFsLseek(fd, (s64)rest, SEEK_SET, &pos);
 			
-			while(lv2FsRead(fd, buf, BUFFER_SIZE, &read) == 0 && read > 0)
+			while(sysFsRead(fd, buf, BUFFER_SIZE, &read) == 0 && read > 0)
 			{
-				if((u64)send(sd, buf, (size_t)read, 0) < read)
+				if(send(sd, buf, (size_t)read, 0) < (size_t)read)
 				{
 					ret = -1;
 					break;
 				}
 			}
 			
-			lv2FsClose(fd);
+			sysFsClose(fd);
 		}
 		
 		free(buf);
@@ -161,23 +161,24 @@ int recvfile(const char* filename, int sd, int rest)
 	if(buf != NULL)
 	{
 		Lv2FsFile fd;
-		if(lv2FsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, 0644, NULL, 0) == 0)
+		if(sysFsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) == 0)
 		{
 			ret = 0;
 			
 			u64 read, write, pos;
-			lv2FsLSeek64(fd, (s64)rest, SEEK_SET, &pos);
+			sysFsLseek(fd, (s64)rest, SEEK_SET, &pos);
 			
 			while((read = (u64)recv(sd, buf, BUFFER_SIZE, MSG_WAITALL)) > 0)
 			{
-				if(lv2FsWrite(fd, buf, read, &write) != 0 || write < read)
+				if(sysFsWrite(fd, buf, read, &write) != 0 || write < read)
 				{
 					ret = -1;
 					break;
 				}
 			}
 			
-			lv2FsClose(fd);
+			sysFsClose(fd);
+			sysFsChmod(filename, 0644);
 		}
 		
 		free(buf);

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include <psl1ght/lv2/filesystem.h>
+#include <sys/sysfs.h>
 #include <net/net.h>
 
 #include "functions.h"

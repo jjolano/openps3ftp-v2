@@ -234,7 +234,7 @@ void opf_clienthandler(u64 arg)
 				{
 					abspath(param, cwd, path);
 					
-					if(lv2FsMkdir(path, 0755) == 0)
+					if(sysFsMkdir(path, 0755) == 0)
 					{
 						sprintf(buffer, "257 \"%s\" was successfully created\r\n", path);
 						ssend(conn_s, buffer);
@@ -252,7 +252,7 @@ void opf_clienthandler(u64 arg)
 				{
 					abspath(param, cwd, path);
 					
-					if(lv2FsRmdir(path) == 0)
+					if(sysFsRmdir(path) == 0)
 					{
 						ssend(conn_s, "250 Directory successfully removed\r\n");
 					}
@@ -369,14 +369,14 @@ void opf_clienthandler(u64 arg)
 					abspath(param, cwd, path);
 					
 					Lv2FsFile fd;
-					if(lv2FsOpenDir(is_dir(path) ? path : cwd, &fd) == 0)
+					if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
 					{
 						Lv2FsDirent entry;
 						u64 read;
 						
 						ssend(conn_s, "150 Accepted data connection\r\n");
 						
-						while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
+						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
 							abspath(entry.d_name, cwd, path);
 							
@@ -386,7 +386,7 @@ void opf_clienthandler(u64 arg)
 							}
 							
 							Lv2FsStat buf;
-							lv2FsStat(path, &buf);
+							sysFsStat(path, &buf);
 							
 							char tstr[16];
 							strftime(tstr, 15, "%b %d %H:%M", localtime(&buf.st_mtime));
@@ -409,7 +409,7 @@ void opf_clienthandler(u64 arg)
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
 						
-						lv2FsCloseDir(fd);
+						sysFsClosedir(fd);
 					}
 					else
 					{
@@ -429,14 +429,14 @@ void opf_clienthandler(u64 arg)
 					abspath(param, cwd, path);
 					
 					Lv2FsFile fd;
-					if(lv2FsOpenDir(is_dir(path) ? path : cwd, &fd) == 0)
+					if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
 					{
 						Lv2FsDirent entry;
 						u64 read;
 						
 						ssend(conn_s, "150 Accepted data connection\r\n");
 						
-						while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
+						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
 							abspath(entry.d_name, cwd, path);
 							
@@ -446,7 +446,7 @@ void opf_clienthandler(u64 arg)
 							}
 							
 							Lv2FsStat buf;
-							lv2FsStat(path, &buf);
+							sysFsStat(path, &buf);
 							
 							char tstr[16];
 							strftime(tstr, 15, "%Y%m%d%H%M%S", localtime(&buf.st_mtime));
@@ -482,7 +482,7 @@ void opf_clienthandler(u64 arg)
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
 						
-						lv2FsCloseDir(fd);
+						sysFsClosedir(fd);
 					}
 					else
 					{
@@ -500,14 +500,14 @@ void opf_clienthandler(u64 arg)
 				abspath(param, cwd, path);
 				
 				Lv2FsFile fd;
-				if(lv2FsOpenDir(is_dir(path) ? path : cwd, &fd) == 0)
+				if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
 				{
 					Lv2FsDirent entry;
 					u64 read;
 					
 					ssend(conn_s, "250-Directory Listing:\r\n");
 					
-					while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
+					while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 					{
 						abspath(entry.d_name, cwd, path);
 						
@@ -517,7 +517,7 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						Lv2FsStat buf;
-						lv2FsStat(path, &buf);
+						sysFsStat(path, &buf);
 						
 						char tstr[16];
 						strftime(tstr, 15, "%Y%m%d%H%M%S", localtime(&buf.st_mtime));
@@ -553,7 +553,7 @@ void opf_clienthandler(u64 arg)
 					
 					ssend(conn_s, "250 End\r\n");
 					
-					lv2FsCloseDir(fd);
+					sysFsClosedir(fd);
 				}
 				else
 				{
@@ -568,14 +568,14 @@ void opf_clienthandler(u64 arg)
 					abspath(param, cwd, path);
 					
 					Lv2FsFile fd;
-					if(lv2FsOpenDir(is_dir(path) ? path : cwd, &fd) == 0)
+					if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
 					{
 						Lv2FsDirent entry;
 						u64 read;
 						
 						ssend(conn_s, "150 Accepted data connection\r\n");
 						
-						while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
+						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
 							sprintf(buffer, "%s\r\n", entry.d_name);
 							ssend(data_s, buffer);
@@ -583,7 +583,7 @@ void opf_clienthandler(u64 arg)
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
 						
-						lv2FsCloseDir(fd);
+						sysFsClosedir(fd);
 					}
 					else
 					{
@@ -698,7 +698,7 @@ void opf_clienthandler(u64 arg)
 				{
 					abspath(param, cwd, path);
 					
-					if(lv2FsUnlink(path) == 0)
+					if(sysFsUnlink(path) == 0)
 					{
 						ssend(conn_s, "250 File successfully deleted\r\n");
 					}
@@ -769,15 +769,11 @@ void opf_clienthandler(u64 arg)
 					if(split == 1)
 					{
 						char perms[5];
-						perms[0] = 0;
-						perms[1] = param3[0];
-						perms[2] = param3[1];
-						perms[3] = param3[2];
-						perms[4] = '\0';
+						sprintf(perms, "0%s", param3);
 						
 						abspath(filename, cwd, path);
 						
-						if(lv2FsChmod(path, strtoul(perms, NULL, 8)) == 0)
+						if(sysFsChmod(path, strtol(perms, NULL, 8)) == 0)
 						{
 							ssend(conn_s, "250 File permissions successfully set\r\n");
 						}
@@ -797,12 +793,13 @@ void opf_clienthandler(u64 arg)
 					if(split == 1)
 					{
 						Lv2FsFile fd;
-						if(lv2FsOpen(PASSWD_FILE, LV2_O_WRONLY | LV2_O_CREAT | LV2_O_TRUNC, &fd, 0660, NULL, 0) == 0)
+						if(sysFsOpen(PASSWD_FILE, LV2_O_WRONLY | LV2_O_CREAT | LV2_O_TRUNC, &fd, NULL, 0) == 0)
 						{
 							u64 written;
 							strcpy(userpass, param2);
-							lv2FsWrite(fd, param2, strlen(param2), &written);
-							lv2FsClose(fd);
+							sysFsWrite(fd, param2, strlen(param2), &written);
+							sysFsClose(fd);
+							sysFsChmod(PASSWD_FILE, 0660);
 							
 							ssend(conn_s, "200 Password successfully set\r\n");
 						}
@@ -840,7 +837,7 @@ void opf_clienthandler(u64 arg)
 					abspath(param, cwd, path);
 					
 					Lv2FsStat buf;
-					if(lv2FsStat(path, &buf) == 0)
+					if(sysFsStat(path, &buf) == 0)
 					{
 						sprintf(buffer, "213 %llu\r\n", (unsigned long long)buf.st_size);
 						ssend(conn_s, buffer);
@@ -863,7 +860,7 @@ void opf_clienthandler(u64 arg)
 					abspath(param, cwd, path);
 					
 					Lv2FsStat buf;
-					if(lv2FsStat(path, &buf) == 0)
+					if(sysFsStat(path, &buf) == 0)
 					{
 						char tstr[32];
 						strftime(tstr, 16, "213 %Y%m%d%H%M%S\r\n", localtime(&buf.st_mtime));
@@ -950,24 +947,21 @@ void opf_connectionhandler(u64 arg)
 	netCtlInit();
 	union net_ctl_info info;
 	
-	if(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0)
+	strcpy(statustext, "No Network Connection");
+	
+	while(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0 && exitapp == 0)
 	{
-		strcpy(statustext, "No Network Connection");
-		
-		while(exitapp == 0 && netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0)
-		{
-			sleep(3);
-		}
+		sleep(3);
 	}
 	
-	int list_s = slisten(LISTEN_PORT, 5);
+	int list_s = slisten(LISTEN_PORT, 10);
 	
 	if(list_s > 0)
 	{
 		int conn_s;
 		sys_ppu_thread_t id;
 		
-		sprintf(statustext, "FTP Server Active - Port: %i, IP: %s", LISTEN_PORT, info.ip_address);
+		sprintf(statustext, "FTP Server Active - IP: %s Port: %i", info.ip_address, LISTEN_PORT);
 		
 		while(exitapp == 0)
 		{
@@ -978,12 +972,6 @@ void opf_connectionhandler(u64 arg)
 		}
 		
 		sclose(&list_s);
-	}
-	else
-	{
-		strcpy(statustext, "Failed to start FTP server - exiting...");
-		sleep(3);
-		exitapp = 1;
 	}
 	
 	sys_ppu_thread_exit(0);
@@ -1008,11 +996,11 @@ int main()
 	
 	#if DISABLE_PASS == 0
 	Lv2FsFile fd;
-	if(lv2FsOpen(PASSWD_FILE, LV2_O_RDONLY, &fd, 0, NULL, 0) == 0)
+	if(sysFsOpen(PASSWD_FILE, LV2_O_RDONLY, &fd, NULL, 0) == 0)
 	{
 		u64 read;
-		lv2FsRead(fd, userpass, 63, &read);
-		lv2FsClose(fd);
+		sysFsRead(fd, userpass, 63, &read);
+		sysFsClose(fd);
 	}
 	else
 	{
@@ -1044,6 +1032,8 @@ int main()
 			
 			print(50, 50, toptext, buffers[currentBuffer]->ptr);
 			print(50, 90, statustext, buffers[currentBuffer]->ptr);
+			
+			print(50, 150, "If you like this homebrew, please consider donating to the dev: http://bit.ly/gmzGcI", buffers[currentBuffer]->ptr);
 			
 			if(wf_mnt)
 			{

@@ -8,6 +8,9 @@
 - Should support Remote Play
 - Code optimizations for better performance and reliability
 - Better, more efficient and reliable way of getting the IP (no inet needed - thanks andoma)
+- Added /app_home and /host_root to listing exceptions as they cause problems
+- Now uses Hermes' sysfs sprx link
+- Tweaks made to improve performance
 - New git: http://git-hacks.com/openps3ftp
 
 [Version 1.5 - March 4, 2011]
