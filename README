@@ -14,7 +14,9 @@ http://psl1ght.com/ (git: http://github.com/HACKERCHANNEL/PSL1GHT).
 .: License :.
 This software is licensed under the GNU General Public License v3. The source 
 code (along with source trees of previous versions) is available at the 
-OpenPS3FTP git repository: http://git-hacks.com/openps3ftp/openps3ftp
+OpenPS3FTP git repository:
+- Version 2.0 and later: http://git-hacks.com/openps3ftp
+- Version 1.5 and prior: https://github.com/jjolano/openps3ftp
 
 .: General Usage Tutorial :.
 Just a small tutorial on the basics.
@@ -53,6 +55,9 @@ and then submit your commit to me via pull request.
 If you are developing a program based on or using OpenPS3FTP's code, you must 
 include the source code of your program for each release because OpenPS3FTP is 
 licensed under the GPL.
+
+PSL1GHT SDK commit 24ed743c6dc24d0bf76915109cd8874e92e7cb90 or later is 
+required to compile OpenPS3FTP.
 
 .: Support :.
 If you need help with this program or would like to point out a bug, please 

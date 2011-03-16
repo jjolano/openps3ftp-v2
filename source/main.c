@@ -176,13 +176,13 @@ void opf_clienthandler(u64 arg)
 		else
 		if(strcasecmp(cmd, "FEAT") == 0)
 		{
-			char *feat[] =
+			const char *feat[] =
 			{
 				"REST STREAM", "PASV", "PORT", "MDTM", "MLSD", "SIZE", "SITE CHMOD",
 				"MLST type*;size*;modify*;UNIX.mode*;UNIX.uid*;UNIX.gid*;"
 			};
 			
-			int feat_count = sizeof(feat) / sizeof(char *);
+			const int feat_count = sizeof(feat) / sizeof(char *);
 			
 			ssend(conn_s, "211-Features:\r\n");
 			
@@ -331,7 +331,7 @@ void opf_clienthandler(u64 arg)
 						st = strtok(NULL, ",");
 					}
 					
-					if(i == 6)
+					if(i >= 6)
 					{
 						char ipaddr[16];
 						sprintf(ipaddr, "%s.%s.%s.%s", data[0], data[1], data[2], data[3]);
@@ -379,6 +379,11 @@ void opf_clienthandler(u64 arg)
 						while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
 						{
 							abspath(entry.d_name, cwd, path);
+							
+							if(strcmp(path, "/app_home") == 0 || strcmp(path, "/host_root") == 0)
+							{
+								continue;
+							}
 							
 							Lv2FsStat buf;
 							lv2FsStat(path, &buf);
@@ -434,6 +439,11 @@ void opf_clienthandler(u64 arg)
 						while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
 						{
 							abspath(entry.d_name, cwd, path);
+							
+							if(strcmp(path, "/app_home") == 0 || strcmp(path, "/host_root") == 0)
+							{
+								continue;
+							}
 							
 							Lv2FsStat buf;
 							lv2FsStat(path, &buf);
@@ -500,6 +510,11 @@ void opf_clienthandler(u64 arg)
 					while(lv2FsReadDir(fd, &entry, &read) == 0 && read > 0)
 					{
 						abspath(entry.d_name, cwd, path);
+						
+						if(strcmp(path, "/app_home") == 0 || strcmp(path, "/host_root") == 0)
+						{
+							continue;
+						}
 						
 						Lv2FsStat buf;
 						lv2FsStat(path, &buf);
@@ -934,16 +949,18 @@ void opf_connectionhandler(u64 arg)
 {
 	netCtlInit();
 	union net_ctl_info info;
-	int list_s = -1;
 	
 	if(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0)
 	{
-		sprintf(statustext, "No Network Connection");
+		strcpy(statustext, "No Network Connection");
+		
+		while(exitapp == 0 && netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0)
+		{
+			sleep(3);
+		}
 	}
-	else
-	{
-		list_s = slisten(LISTEN_PORT, 5);
-	}
+	
+	int list_s = slisten(LISTEN_PORT, 5);
 	
 	if(list_s > 0)
 	{
@@ -961,6 +978,12 @@ void opf_connectionhandler(u64 arg)
 		}
 		
 		sclose(&list_s);
+	}
+	else
+	{
+		strcpy(statustext, "Failed to start FTP server - exiting...");
+		sleep(3);
+		exitapp = 1;
 	}
 	
 	sys_ppu_thread_exit(0);
@@ -1021,8 +1044,6 @@ int main()
 			
 			print(50, 50, toptext, buffers[currentBuffer]->ptr);
 			print(50, 90, statustext, buffers[currentBuffer]->ptr);
-			
-			print(50, 170, "See Settings and Connection Status List for your console's IP.", buffers[currentBuffer]->ptr);
 			
 			if(wf_mnt)
 			{
