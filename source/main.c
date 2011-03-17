@@ -863,7 +863,7 @@ void opf_clienthandler(u64 arg)
 					if(sysFsStat(path, &buf) == 0)
 					{
 						char tstr[32];
-						strftime(tstr, 16, "213 %Y%m%d%H%M%S\r\n", localtime(&buf.st_mtime));
+						strftime(tstr, 31, "213 %Y%m%d%H%M%S\r\n", localtime(&buf.st_mtime));
 						ssend(conn_s, tstr);
 					}
 					else
@@ -1033,7 +1033,8 @@ int main()
 			print(50, 50, toptext, buffers[currentBuffer]->ptr);
 			print(50, 90, statustext, buffers[currentBuffer]->ptr);
 			
-			print(50, 150, "If you like this homebrew, please consider donating to the dev: http://bit.ly/gmzGcI", buffers[currentBuffer]->ptr);
+			print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[currentBuffer]->ptr);
+			print(50, 190, "Follow @dashhacks and win free stuff!", buffers[currentBuffer]->ptr);
 			
 			if(wf_mnt)
 			{
