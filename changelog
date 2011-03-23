@@ -11,6 +11,7 @@
 - Now uses Hermes' sysfs sprx link instead of lv2 syscalls
 - Tweaks made to improve internal performance, stability, and reliability
 - Added a "screen saver" (simply blanks screen after 60 sec of no controller input)
+- Added an exit application button combination shortcut (SELECT + START)
 - New git for v2.0 and later: http://git-hacks.com/openps3ftp
 
 [Version 1.5 - March 4, 2011]

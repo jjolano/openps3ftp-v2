@@ -177,6 +177,7 @@ void opf_clienthandler(u64 arg)
 		{
 			connactive = 0;
 			ssend(conn_s, "221 Bye!\r\n");
+			break;
 		}
 		else
 		if(strcasecmp(cmd, "FEAT") == 0)
@@ -371,10 +372,8 @@ void opf_clienthandler(u64 arg)
 			{
 				if(data_s > 0)
 				{
-					abspath(param, cwd, path);
-					
 					Lv2FsFile fd;
-					if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
+					if(sysFsOpendir(cwd, &fd) == 0)
 					{
 						Lv2FsDirent entry;
 						u64 read;
@@ -413,7 +412,6 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
-						
 						sysFsClosedir(fd);
 					}
 					else
@@ -431,10 +429,8 @@ void opf_clienthandler(u64 arg)
 			{
 				if(data_s > 0)
 				{
-					abspath(param, cwd, path);
-					
 					Lv2FsFile fd;
-					if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
+					if(sysFsOpendir(cwd, &fd) == 0)
 					{
 						Lv2FsDirent entry;
 						u64 read;
@@ -486,7 +482,6 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
-						
 						sysFsClosedir(fd);
 					}
 					else
@@ -502,10 +497,8 @@ void opf_clienthandler(u64 arg)
 			else
 			if(strcasecmp(cmd, "MLST") == 0)
 			{
-				abspath(param, cwd, path);
-				
 				Lv2FsFile fd;
-				if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
+				if(sysFsOpendir(cwd, &fd) == 0)
 				{
 					Lv2FsDirent entry;
 					u64 read;
@@ -557,7 +550,6 @@ void opf_clienthandler(u64 arg)
 					}
 					
 					ssend(conn_s, "250 End\r\n");
-					
 					sysFsClosedir(fd);
 				}
 				else
@@ -570,10 +562,8 @@ void opf_clienthandler(u64 arg)
 			{
 				if(data_s > 0)
 				{
-					abspath(param, cwd, path);
-					
 					Lv2FsFile fd;
-					if(sysFsOpendir(is_dir(path) ? path : cwd, &fd) == 0)
+					if(sysFsOpendir(cwd, &fd) == 0)
 					{
 						Lv2FsDirent entry;
 						u64 read;
@@ -587,7 +577,6 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
-						
 						sysFsClosedir(fd);
 					}
 					else
@@ -819,6 +808,7 @@ void opf_clienthandler(u64 arg)
 				{
 					exitapp = 1;
 					ssend(conn_s, "221 Exiting...\r\n");
+					break;
 				}
 				else
 				if(strcasecmp(cmd, "HELP") == 0)
@@ -980,6 +970,7 @@ void opf_connectionhandler(u64 arg)
 
 void opf_screensaver(u64 arg)
 {
+	int diff = 0;
 	u64 sec, nsec, sec_old, nsec_old;
 	lv2GetCurrentTime(&sec_old, &nsec_old);
 	
@@ -987,25 +978,30 @@ void opf_screensaver(u64 arg)
 	{
 		sys_ppu_thread_yield();
 		
+		diff = sec - sec_old;
+		
 		switch(ssactive)
 		{
 			case 0:
 				lv2GetCurrentTime(&sec, &nsec);
 				
-				if(sec - sec_old >= 60)
+				if(diff >= 60)
 				{
 					ssactive = 1;
 					drawstate = 0;
 				}
 			break;
 			case 2:
-				if(sec - sec_old >= 60)
+				if(diff >= 60)
 				{
 					ssactive = 0;
 					drawstate = 0;
 				}
 				
-				lv2GetCurrentTime(&sec_old, &nsec_old);
+				if(diff > 0)
+				{
+					lv2GetCurrentTime(&sec_old, &nsec_old);
+				}
 			break;
 		}
 	}
@@ -1063,10 +1059,18 @@ int main()
 			if(padinfo.status[i])
 			{
 				ioPadGetData(i, &paddata);
+				
 				if(paddata.BTN_LEFT || paddata.BTN_UP || paddata.BTN_RIGHT || paddata.BTN_DOWN
 				|| paddata.BTN_CROSS || paddata.BTN_SQUARE || paddata.BTN_CIRCLE || paddata.BTN_TRIANGLE)
 				{
 					ssactive = 2;
+					break;
+				}
+				
+				if(paddata.BTN_SELECT && paddata.BTN_START)
+				{
+					exitapp = 1;
+					break;
 				}
 			}
 		}
@@ -1089,9 +1093,11 @@ int main()
 				print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[i]->ptr);
 				print(50, 190, "Follow @dashhacks on Twitter and win free stuff!", buffers[i]->ptr);
 				
+				print(50, 250, "Press SELECT + START to exit this program.", buffers[i]->ptr);
+				
 				if(wf_mnt)
 				{
-					print(50, 250, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
+					print(50, 300, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
 				}
 			}
 			

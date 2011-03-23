@@ -65,7 +65,6 @@ int ssplit(const char* str, char* left, int lmaxlen, char* right, int rmaxlen)
 		int rrange = ((len - ios - 1) < rmaxlen ? (len - ios - 1) : rmaxlen);
 		strncpy(right, str + ios + 1, rrange);
 		right[rrange] = '\0';
-		
 		return 1;
 	}
 	
@@ -169,6 +168,7 @@ int recvfile(const char* filename, int sd, int rest)
 				}
 			}
 			
+			fsync(fd);
 			sysFsClose(fd);
 			sysFsChmod(filename, 0644);
 		}

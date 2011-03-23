@@ -2,7 +2,7 @@
 #pragma once
 
 #define ssend(socket,str) send(socket, str, strlen(str), 0)
-#define fis_dir(entry) (entry.st_mode & _IFMT) == _IFDIR
+#define fis_dir(entry) S_ISDIR(entry.st_mode)
 
 void abspath(const char* relpath, const char* cwd, char* abspath);
 int exists(const char* path);
