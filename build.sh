@@ -8,6 +8,7 @@ OUTDIR="output"
 
 PKGFILE="$(basename $(pwd))"
 ZIPFILE="$OUTDIR/$PKGFILE.zip"
+
 SEDFILE="./include/common.h"
 
 # create directories
@@ -15,28 +16,23 @@ mkdir -p "$OUTDIR"
 
 # compile stuff and zip
 ## create 'nopass' version
-echo "[make] nopass..."
+echo -n "[make] nopass..."
 sed -i 's/DISABLE_PASS\t[01]/DISABLE_PASS\t1/' "$SEDFILE"
 make pkg > /dev/null
+echo "OK"
+
 mv "$PKGFILE.pkg" "$PKGFILE-nopass.pkg"
 mv "$PKGFILE.geohot.pkg" "$PKGFILE-nopass.geohot.pkg"
 
-## print hash
-echo " $(md5sum "$PKGFILE.elf")"
-
 ## create 'normal' version
-echo "[make] normal..."
+echo -n "[make] normal..."
 sed -i 's/DISABLE_PASS\t[01]/DISABLE_PASS\t0/' "$SEDFILE"
 make pkg > /dev/null
-
-## print hash
-echo " $(md5sum "$PKGFILE.elf")"
+echo "OK"
 
 ## create zip
-echo "[zip] $ZIPFILE..."
+echo -n "[zip] $ZIPFILE..."
 touch README COPYING changelog *.pkg
 zip -q "$ZIPFILE" README COPYING changelog *.pkg
-
-# we're done!
-echo "done"
+echo "OK"
 # end

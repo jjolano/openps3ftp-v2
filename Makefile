@@ -10,7 +10,7 @@ BUILD		:=	build
 SOURCE		:=	source
 INCLUDE		:=	include
 DATA		:=	data
-LIBS		:=	-lnet -lsysmodule -lgcm_sys -lreality -lsysutil -lnetctl -lsysfs
+LIBS		:=	-lnet -lsysmodule -lgcm_sys -lreality -lsysutil -lnetctl -lsysfs -lio
 
 TITLE		:=	OpenPS3FTP
 APPID		:=	OFTP00001

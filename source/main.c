@@ -21,6 +21,8 @@ const char* AUTHOR	= "jjolano";
 
 #include <assert.h>
 
+#include <psl1ght/lv2/timer.h>
+
 #include <sysutil/video.h>
 #include <sysutil/events.h>
 
@@ -30,6 +32,8 @@ const char* AUTHOR	= "jjolano";
 #include <net/netctl.h>
 
 #include <sys/thread.h>
+
+#include <io/pad.h>
 
 #include "common.h"
 #include "sconsole.h"
@@ -115,15 +119,16 @@ void init_screen()
 }
 
 int exitapp = 0;
-int xmbopen = 0;
+int drawstate = 0;
+int ssactive = 0;
 
 void sysevent_callback(u64 status, u64 param, void * userdata)
 {
 	switch(status)
 	{
 		case EVENT_REQUEST_EXITAPP:exitapp = 1;break;
-		case EVENT_MENU_OPEN:xmbopen = 1;break;
-		case EVENT_MENU_CLOSE:xmbopen = 0;break;
+		case EVENT_MENU_CLOSE:ssactive = 2;break;
+		case EVENT_DRAWING_END:drawstate = 0;break;
 	}
 }
 
@@ -139,10 +144,10 @@ void opf_clienthandler(u64 arg)
 	
 	char user[32];
 	char rnfr[256];
-	char cwd[256] = "/";
+	char cwd[256] = "/\0";
 	char path[256];
 	
-	char buffer[512];
+	char buffer[384];
 	size_t bytes;
 	
 	netSocketInfo p;
@@ -160,7 +165,7 @@ void opf_clienthandler(u64 arg)
 	sprintf(buffer, "220 Version %s\r\n", VERSION);
 	ssend(conn_s, buffer);
 	
-	while(exitapp == 0 && connactive == 1 && (bytes = recv(conn_s, buffer, 511, 0)) > 0)
+	while(exitapp == 0 && connactive == 1 && (bytes = recv(conn_s, buffer, 383, 0)) > 0)
 	{
 		buffer[bytes - 1] = '\0';
 		buffer[bytes - 2] = '\0';
@@ -741,7 +746,7 @@ void opf_clienthandler(u64 arg)
 				{
 					abspath(param, cwd, path);
 					
-					if(lv2FsRename(rnfr, path) == 0)
+					if(rename(rnfr, path) == 0)
 					{
 						ssend(conn_s, "250 File was successfully renamed or moved\r\n");
 					}
@@ -948,26 +953,22 @@ void opf_connectionhandler(u64 arg)
 	union net_ctl_info info;
 	
 	strcpy(statustext, "No Network Connection");
+	while(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0 && exitapp == 0);
 	
-	while(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0 && exitapp == 0)
-	{
-		sleep(3);
-	}
-	
-	int list_s = slisten(LISTEN_PORT, 10);
+	int list_s = slisten(LISTEN_PORT, 8);
 	
 	if(list_s > 0)
 	{
-		int conn_s;
+		u64 conn_s;
 		sys_ppu_thread_t id;
 		
 		sprintf(statustext, "FTP Server Active - IP: %s Port: %i", info.ip_address, LISTEN_PORT);
 		
 		while(exitapp == 0)
 		{
-			if((conn_s = accept(list_s, NULL, NULL)) > 0)
+			if((conn_s = (u64)accept(list_s, NULL, NULL)) > 0)
 			{
-				sys_ppu_thread_create(&id, opf_clienthandler, (u64)conn_s, 1500, 0x2000, 0, "FTP Client");
+				sys_ppu_thread_create(&id, opf_clienthandler, conn_s, 1500, 0x2000, 0, "FTP Client");
 			}
 		}
 		
@@ -975,6 +976,39 @@ void opf_connectionhandler(u64 arg)
 	}
 	
 	sys_ppu_thread_exit(0);
+}
+
+void opf_screensaver(u64 arg)
+{
+	u64 sec, nsec, sec_old, nsec_old;
+	lv2GetCurrentTime(&sec_old, &nsec_old);
+	
+	while(exitapp == 0)
+	{
+		sys_ppu_thread_yield();
+		
+		switch(ssactive)
+		{
+			case 0:
+				lv2GetCurrentTime(&sec, &nsec);
+				
+				if(sec - sec_old >= 60)
+				{
+					ssactive = 1;
+					drawstate = 0;
+				}
+			break;
+			case 2:
+				if(sec - sec_old >= 60)
+				{
+					ssactive = 0;
+					drawstate = 0;
+				}
+				
+				lv2GetCurrentTime(&sec_old, &nsec_old);
+			break;
+		}
+	}
 }
 
 int main()
@@ -990,8 +1024,7 @@ int main()
 		exists("/dev_rwflash") == 0 || 
 		exists("/dev_fflash") == 0 || 
 		exists("/dev_Alejandro") == 0 ||
-		exists("/dev_dragon") == 0 ||
-		exists("/dev_wflash") == 0
+		exists("/dev_dragon") == 0
 		);
 	
 	#if DISABLE_PASS == 0
@@ -1010,38 +1043,62 @@ int main()
 	
 	sys_ppu_thread_t id;
 	sys_ppu_thread_create(&id, opf_connectionhandler, 0, 1500, 0x400, 0, "FTP Server");
+	sys_ppu_thread_create(&id, opf_screensaver, 0, 1500, 0x400, 0, "Screen Saver");
 	
 	init_screen();
+	ioPadInit(7);
 	sconsoleInit(FONT_COLOR_BLACK, FONT_COLOR_WHITE, res.width, res.height);
 	
-	int x, y;
+	PadInfo padinfo;
+	PadData paddata;
+	int i;
+	
 	while(exitapp == 0)
 	{
-		waitFlip();
 		sysCheckCallback();
+		ioPadGetInfo(&padinfo);
 		
-		if(xmbopen == 0)
+		for(i = 0; i < MAX_PADS; i++)
 		{
-			for(y = 0; y < res.height; y++)
+			if(padinfo.status[i])
 			{
-				for(x = 0; x < res.width; x++)
+				ioPadGetData(i, &paddata);
+				if(paddata.BTN_LEFT || paddata.BTN_UP || paddata.BTN_RIGHT || paddata.BTN_DOWN
+				|| paddata.BTN_CROSS || paddata.BTN_SQUARE || paddata.BTN_CIRCLE || paddata.BTN_TRIANGLE)
 				{
-					buffers[currentBuffer]->ptr[y * res.width + x] = FONT_COLOR_BLACK; // background
+					ssactive = 2;
 				}
-			}
-			
-			print(50, 50, toptext, buffers[currentBuffer]->ptr);
-			print(50, 90, statustext, buffers[currentBuffer]->ptr);
-			
-			print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[currentBuffer]->ptr);
-			print(50, 190, "Follow @dashhacks and win free stuff!", buffers[currentBuffer]->ptr);
-			
-			if(wf_mnt)
-			{
-				print(50, 250, "Warning: writable dev_flash mount detected.", buffers[currentBuffer]->ptr);
 			}
 		}
 		
+		if(drawstate == 0)
+		{
+			s32 buffer_size = 4 * res.width * res.height;
+			memset(buffers[0]->ptr, 0, buffer_size);
+			memset(buffers[1]->ptr, 0, buffer_size);
+			drawstate = 1;
+		}
+		
+		if(ssactive == 0 && drawstate == 1)
+		{
+			for(i = 0; i < 2; i++)
+			{
+				print(50, 50, toptext, buffers[i]->ptr);
+				print(50, 90, statustext, buffers[i]->ptr);
+				
+				print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[i]->ptr);
+				print(50, 190, "Follow @dashhacks on Twitter and win free stuff!", buffers[i]->ptr);
+				
+				if(wf_mnt)
+				{
+					print(50, 250, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
+				}
+			}
+			
+			drawstate = -1;
+		}
+		
+		waitFlip();
 		flip(currentBuffer);
 		currentBuffer = !currentBuffer;
 	}

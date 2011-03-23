@@ -6,11 +6,12 @@ cd "$(dirname "$0")"
 
 OUTDIR="output"
 
-echo "[make] Cleaning..."
-make clean > /dev/null
-
-echo "[rm] Removing output directories..."
+echo -n "[rm] $OUTDIR..."
 rm -fr "$OUTDIR"
+echo "OK"
 
-echo "done"
+echo -n "[make] clean..."
+make clean > /dev/null
+echo "OK"
+
 # end

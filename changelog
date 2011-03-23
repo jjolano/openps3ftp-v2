@@ -1,17 +1,17 @@
-[Version 2.0 - March 2011]
-- New ICON0.PNG (xmb icon)
+[Version 2.0 - March 23, 2011]
+- Changed ICON0.PNG
 - Moved to a different XMB category (now under Network)
 - Fixed another possible memory leak
-- Added more flash mount points to detect
-- Changed LIST format again
-- New algorithms and methods
-- Should support Remote Play
-- Code optimizations for better performance and reliability
-- Better, more efficient and reliable way of getting the IP (no inet needed - thanks andoma)
+- Added "dev_dragon" to mount detection and warning list
+- Changed LIST command output format (again)
+- Added new algorithms and methods
+- Should support Remote Play (untested)
+- Added a better way to get the IP (no internet required anymore - thanks andoma)
 - Added /app_home and /host_root to listing exceptions as they cause problems
-- Now uses Hermes' sysfs sprx link
-- Tweaks made to improve performance
-- New git: http://git-hacks.com/openps3ftp
+- Now uses Hermes' sysfs sprx link instead of lv2 syscalls
+- Tweaks made to improve internal performance, stability, and reliability
+- Added a "screen saver" (simply blanks screen after 60 sec of no controller input)
+- New git for v2.0 and later: http://git-hacks.com/openps3ftp
 
 [Version 1.5 - March 4, 2011]
 - Improved performance and stability

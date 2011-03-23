@@ -55,25 +55,17 @@ int ssplit(const char* str, char* left, int lmaxlen, char* right, int rmaxlen)
 {
 	int ios = strcspn(str, " ");
 	int len = strlen(str);
-	int i = 0;
 	
-	while(i < ios && i < lmaxlen)
+	int lrange = (ios < lmaxlen ? ios : lmaxlen);
+	strncpy(left, str, lrange);
+	left[lrange] = '\0';
+	
+	if(ios < len)
 	{
-		left[i] = str[i];
-		i++;
-	}
-	
-	left[i++] = '\0';
-	
-	if(ios < (len - 1))
-	{
-		while(i < len && (i - ios) < rmaxlen)
-		{
-			right[i - ios - 1] = str[i];
-			i++;
-		}
+		int rrange = ((len - ios - 1) < rmaxlen ? (len - ios - 1) : rmaxlen);
+		strncpy(right, str + ios + 1, rrange);
+		right[rrange] = '\0';
 		
-		right[i - ios - 1] = '\0';
 		return 1;
 	}
 	
