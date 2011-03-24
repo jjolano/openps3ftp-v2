@@ -412,12 +412,13 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
-						sysFsClosedir(fd);
 					}
 					else
 					{
 						ssend(conn_s, "550 Cannot access directory\r\n");
 					}
+					
+					sysFsClosedir(fd);
 				}
 				else
 				{
@@ -482,12 +483,13 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
-						sysFsClosedir(fd);
 					}
 					else
 					{
 						ssend(conn_s, "550 Cannot access directory\r\n");
 					}
+					
+					sysFsClosedir(fd);
 				}
 				else
 				{
@@ -550,12 +552,13 @@ void opf_clienthandler(u64 arg)
 					}
 					
 					ssend(conn_s, "250 End\r\n");
-					sysFsClosedir(fd);
 				}
 				else
 				{
 					ssend(conn_s, "550 Cannot access directory\r\n");
 				}
+				
+				sysFsClosedir(fd);
 			}
 			else
 			if(strcasecmp(cmd, "NLST") == 0)
@@ -577,12 +580,13 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
-						sysFsClosedir(fd);
 					}
 					else
 					{
 						ssend(conn_s, "550 Cannot access directory\r\n");
 					}
+					
+					sysFsClosedir(fd);
 				}
 				else
 				{
@@ -792,11 +796,12 @@ void opf_clienthandler(u64 arg)
 							u64 written;
 							strcpy(userpass, param2);
 							sysFsWrite(fd, param2, strlen(param2), &written);
-							sysFsClose(fd);
-							sysFsChmod(PASSWD_FILE, 0660);
 							
 							ssend(conn_s, "200 Password successfully set\r\n");
 						}
+						
+						sysFsClose(fd);
+						sysFsChmod(PASSWD_FILE, 0660);
 					}
 					else
 					{
@@ -970,7 +975,6 @@ void opf_connectionhandler(u64 arg)
 
 void opf_screensaver(u64 arg)
 {
-	int diff = 0;
 	u64 sec, nsec, sec_old, nsec_old;
 	lv2GetCurrentTime(&sec_old, &nsec_old);
 	
@@ -978,30 +982,25 @@ void opf_screensaver(u64 arg)
 	{
 		sys_ppu_thread_yield();
 		
-		diff = sec - sec_old;
-		
 		switch(ssactive)
 		{
 			case 0:
 				lv2GetCurrentTime(&sec, &nsec);
 				
-				if(diff >= 60)
+				if(sec - sec_old >= 60)
 				{
 					ssactive = 1;
 					drawstate = 0;
 				}
 			break;
 			case 2:
-				if(diff >= 60)
+				if(sec - sec_old >= 60)
 				{
 					ssactive = 0;
 					drawstate = 0;
 				}
 				
-				if(diff > 0)
-				{
-					lv2GetCurrentTime(&sec_old, &nsec_old);
-				}
+				lv2GetCurrentTime(&sec_old, &nsec_old);
 			break;
 		}
 	}
@@ -1029,12 +1028,13 @@ int main()
 	{
 		u64 read;
 		sysFsRead(fd, userpass, 63, &read);
-		sysFsClose(fd);
 	}
 	else
 	{
 		strcpy(userpass, DEFAULT_PASS);
 	}
+	
+	sysFsClose(fd);
 	#endif
 	
 	sys_ppu_thread_t id;
@@ -1083,7 +1083,7 @@ int main()
 			drawstate = 1;
 		}
 		
-		if(ssactive == 0 && drawstate == 1)
+		if(ssactive != 1 && drawstate == 1)
 		{
 			for(i = 0; i < 2; i++)
 			{
@@ -1093,7 +1093,7 @@ int main()
 				print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[i]->ptr);
 				print(50, 190, "Follow @dashhacks on Twitter and win free stuff!", buffers[i]->ptr);
 				
-				print(50, 250, "Press SELECT + START to exit this program.", buffers[i]->ptr);
+				print(50, 250, "Press SELECT + START to exit.", buffers[i]->ptr);
 				
 				if(wf_mnt)
 				{

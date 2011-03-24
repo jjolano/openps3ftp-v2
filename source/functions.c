@@ -119,7 +119,15 @@ int sendfile(const char* filename, int sd, int rest)
 	if(buf != NULL)
 	{
 		Lv2FsFile fd;
-		if(sysFsOpen(filename, LV2_O_RDONLY, &fd, NULL, 0) == 0)
+		
+		// experimental "retry system" :P
+		int i;
+		for(i = 0; sysFsOpen(filename, LV2_O_RDONLY, &fd, NULL, 0) != 0 && i < 5; i++)
+		{
+			usleep(200000);
+		}
+		
+		if(i < 5)
 		{
 			ret = 0;
 			
@@ -128,16 +136,15 @@ int sendfile(const char* filename, int sd, int rest)
 			
 			while(sysFsRead(fd, buf, BUFFER_SIZE, &read) == 0 && read > 0)
 			{
-				if(send(sd, buf, (size_t)read, 0) < (size_t)read)
+				if((u64)send(sd, buf, (size_t)read, 0) < read)
 				{
 					ret = -1;
 					break;
 				}
 			}
-			
-			sysFsClose(fd);
 		}
 		
+		sysFsClose(fd);
 		free(buf);
 	}
 	
@@ -152,7 +159,15 @@ int recvfile(const char* filename, int sd, int rest)
 	if(buf != NULL)
 	{
 		Lv2FsFile fd;
-		if(sysFsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) == 0)
+		
+		// experimental "retry system" :P
+		int i;
+		for(i = 0; sysFsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) != 0 && i < 5; i++)
+		{
+			usleep(200000);
+		}
+		
+		if(i < 5)
 		{
 			ret = 0;
 			
@@ -168,11 +183,11 @@ int recvfile(const char* filename, int sd, int rest)
 				}
 			}
 			
-			fsync(fd);
-			sysFsClose(fd);
-			sysFsChmod(filename, 0644);
+			lv2FsFsync(fd);
 		}
 		
+		sysFsClose(fd);
+		sysFsChmod(filename, 0644);
 		free(buf);
 	}
 	
