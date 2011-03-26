@@ -32,7 +32,7 @@ echo "OK"
 
 ## create zip
 echo -n "[zip] $ZIPFILE..."
-touch README COPYING changelog *.pkg
-zip -q "$ZIPFILE" README COPYING changelog *.pkg
+touch README COPYING ChangeLog *.pkg
+zip -q "$ZIPFILE" README COPYING ChangeLog *.pkg
 echo "OK"
 # end

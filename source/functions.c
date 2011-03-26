@@ -111,7 +111,7 @@ void sclose(int *sd)
 	}
 }
 
-int sendfile(const char* filename, int sd, int rest)
+int sendfile(const char* filename, int sd, long long rest)
 {
 	int ret = -1;
 	char *buf = malloc(BUFFER_SIZE * sizeof(char));
@@ -151,7 +151,7 @@ int sendfile(const char* filename, int sd, int rest)
 	return ret;
 }
 
-int recvfile(const char* filename, int sd, int rest)
+int recvfile(const char* filename, int sd, long long rest)
 {
 	int ret = -1;
 	char *buf = malloc(BUFFER_SIZE * sizeof(char));

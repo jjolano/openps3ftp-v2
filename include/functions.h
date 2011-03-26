@@ -13,5 +13,5 @@ int slisten(int port, int backlog);
 int sconnect(const char ipaddr[16], int port, int *sd);
 void sclose(int *sd);
 
-int sendfile(const char* filename, int sd, int rest);
-int recvfile(const char* filename, int sd, int rest);
+int sendfile(const char* filename, int sd, long long rest);
+int recvfile(const char* filename, int sd, long long rest);

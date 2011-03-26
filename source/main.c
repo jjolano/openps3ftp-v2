@@ -140,7 +140,7 @@ void opf_clienthandler(u64 arg)
 	int connactive = 1;
 	int dataactive = 0;
 	int loggedin = 0;
-	int rest = 0;
+	long long rest = 0;
 	
 	char user[32];
 	char rnfr[256];
@@ -671,7 +671,7 @@ void opf_clienthandler(u64 arg)
 			{
 				if(split == 1)
 				{
-					int i = atoi(param);
+					unsigned long long i = atoll(param);
 					
 					if(i >= 0)
 					{
@@ -944,13 +944,12 @@ void opf_clienthandler(u64 arg)
 
 void opf_connectionhandler(u64 arg)
 {
-	netCtlInit();
 	union net_ctl_info info;
 	
 	strcpy(statustext, "No Network Connection");
 	while(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0 && exitapp == 0);
 	
-	int list_s = slisten(LISTEN_PORT, 8);
+	int list_s = slisten(LISTEN_PORT, 5);
 	
 	if(list_s > 0)
 	{
@@ -963,6 +962,7 @@ void opf_connectionhandler(u64 arg)
 		{
 			if((conn_s = (u64)accept(list_s, NULL, NULL)) > 0)
 			{
+				sys_ppu_thread_yield();
 				sys_ppu_thread_create(&id, opf_clienthandler, conn_s, 1500, 0x2000, 0, "FTP Client");
 			}
 		}
@@ -987,14 +987,14 @@ void opf_screensaver(u64 arg)
 			case 0:
 				lv2GetCurrentTime(&sec, &nsec);
 				
-				if(sec - sec_old >= 60)
+				if((sec - sec_old) >= 60)
 				{
 					ssactive = 1;
 					drawstate = 0;
 				}
 			break;
 			case 2:
-				if(sec - sec_old >= 60)
+				if((sec - sec_old) >= 60)
 				{
 					ssactive = 0;
 					drawstate = 0;
@@ -1009,18 +1009,12 @@ void opf_screensaver(u64 arg)
 int main()
 {
 	netInitialize();
+	netCtlInit();
+	
+	sys_ppu_thread_t id;
+	sys_ppu_thread_create(&id, opf_connectionhandler, 0, 1500, 0x400, 0, "FTP Server");
+	
 	sysRegisterCallback(EVENT_SLOT0, sysevent_callback, NULL);
-	
-	char toptext[128];
-	sprintf(toptext, "%s v%s by %s", TITLE, VERSION, AUTHOR);
-	
-	int wf_mnt = (
-		exists("/dev_blind") == 0 ||
-		exists("/dev_rwflash") == 0 || 
-		exists("/dev_fflash") == 0 || 
-		exists("/dev_Alejandro") == 0 ||
-		exists("/dev_dragon") == 0
-		);
 	
 	#if DISABLE_PASS == 0
 	Lv2FsFile fd;
@@ -1037,10 +1031,6 @@ int main()
 	sysFsClose(fd);
 	#endif
 	
-	sys_ppu_thread_t id;
-	sys_ppu_thread_create(&id, opf_connectionhandler, 0, 1500, 0x400, 0, "FTP Server");
-	sys_ppu_thread_create(&id, opf_screensaver, 0, 1500, 0x400, 0, "Screen Saver");
-	
 	init_screen();
 	ioPadInit(7);
 	sconsoleInit(FONT_COLOR_BLACK, FONT_COLOR_WHITE, res.width, res.height);
@@ -1048,6 +1038,19 @@ int main()
 	PadInfo padinfo;
 	PadData paddata;
 	int i;
+	
+	char toptext[128];
+	sprintf(toptext, "%s v%s by %s", TITLE, VERSION, AUTHOR);
+	
+	int wf_mnt = (
+		exists("/dev_blind") == 0 ||
+		exists("/dev_rwflash") == 0 || 
+		exists("/dev_fflash") == 0 || 
+		exists("/dev_Alejandro") == 0 ||
+		exists("/dev_dragon") == 0
+		);
+	
+	sys_ppu_thread_create(&id, opf_screensaver, 0, 1500, 0x400, 0, "Screen Saver");
 	
 	while(exitapp == 0)
 	{
@@ -1064,13 +1067,11 @@ int main()
 				|| paddata.BTN_CROSS || paddata.BTN_SQUARE || paddata.BTN_CIRCLE || paddata.BTN_TRIANGLE)
 				{
 					ssactive = 2;
-					break;
 				}
 				
 				if(paddata.BTN_SELECT && paddata.BTN_START)
 				{
 					exitapp = 1;
-					break;
 				}
 			}
 		}
@@ -1078,26 +1079,25 @@ int main()
 		if(drawstate == 0)
 		{
 			s32 buffer_size = 4 * res.width * res.height;
-			memset(buffers[0]->ptr, 0, buffer_size);
-			memset(buffers[1]->ptr, 0, buffer_size);
-			drawstate = 1;
-		}
-		
-		if(ssactive != 1 && drawstate == 1)
-		{
+			
 			for(i = 0; i < 2; i++)
 			{
-				print(50, 50, toptext, buffers[i]->ptr);
-				print(50, 90, statustext, buffers[i]->ptr);
+				memset(buffers[i]->ptr, 0, buffer_size);
 				
-				print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[i]->ptr);
-				print(50, 190, "Follow @dashhacks on Twitter and win free stuff!", buffers[i]->ptr);
-				
-				print(50, 250, "Press SELECT + START to exit.", buffers[i]->ptr);
-				
-				if(wf_mnt)
+				if(ssactive != 1)
 				{
-					print(50, 300, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
+					print(50, 50, toptext, buffers[i]->ptr);
+					print(50, 90, statustext, buffers[i]->ptr);
+					
+					print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[i]->ptr);
+					print(50, 190, "Follow @dashhacks on Twitter and win free stuff!", buffers[i]->ptr);
+					
+					print(50, 250, "Press SELECT + START to exit.", buffers[i]->ptr);
+					
+					if(wf_mnt)
+					{
+						print(50, 300, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
+					}
 				}
 			}
 			
