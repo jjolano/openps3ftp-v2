@@ -24,6 +24,8 @@
 // compile-time options
 #define LISTEN_PORT	21		// the port that OpenPS3FTP will listen for connections on
 #define BUFFER_SIZE	32768		// the buffer size used for file transfers
+#ifndef DISABLE_PASS
 #define DISABLE_PASS	0		// disables password checking (1: enable, 0: disable)
+#endif
 #define DEFAULT_USER	"root"		// default username
 #define DEFAULT_PASS	"openbox"	// default password

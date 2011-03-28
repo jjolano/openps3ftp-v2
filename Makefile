@@ -22,6 +22,11 @@ ICON0		:=	$(CURDIR)/ICON0.PNG
 CFLAGS		+= -O2 -Wall -std=gnu99
 CXXFLAGS	+= -O2 -Wall
 
+ifneq ($(strip $(DISABLE_PASS)),)
+CFLAGS		+= -DDISABLE_PASS=$(DISABLE_PASS)
+CXXFLAGS	+= -DDISABLE_PASS=$(DISABLE_PASS)
+endif
+
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
@@ -57,7 +62,7 @@ export INCLUDES	:=	$(foreach dir,$(INCLUDE),-I$(CURDIR)/$(dir)) \
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 clean:
 	@echo "[RM]  $(notdir $(OUTPUT))"
