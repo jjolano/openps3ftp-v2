@@ -14,6 +14,12 @@ ZIPFILE="$OUTDIR/$PKGFILE.zip"
 # create directories
 mkdir -p "$OUTDIR"
 
+# add text files to zip
+echo -n "[zip] creating zip..."
+touch README COPYING ChangeLog
+zip -q -l "$ZIPFILE" README COPYING ChangeLog
+echo "OK"
+
 # compile stuff and zip
 ## create 'nopass' version
 echo -n "[make] nopass..."
@@ -23,14 +29,18 @@ echo "OK"
 mv "$PKGFILE.pkg" "$PKGFILE-nopass.pkg"
 mv "$PKGFILE.geohot.pkg" "$PKGFILE-nopass.geohot.pkg"
 
+echo -n "[zip] adding to zip..."
+zip -q "$ZIPFILE" *.pkg
+echo "OK"
+
 ## create 'normal' version
 echo -n "[make] normal..."
 $MAKE DISABLE_PASS=0 clean pkg > /dev/null
 echo "OK"
 
-## create zip
-echo -n "[zip] $ZIPFILE..."
-touch README COPYING ChangeLog *.pkg
-zip -q "$ZIPFILE" README COPYING ChangeLog *.pkg
+echo -n "[zip] adding to zip..."
+zip -q "$ZIPFILE" *.pkg
 echo "OK"
+
+$MAKE clean > /dev/null
 # end
