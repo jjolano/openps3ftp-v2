@@ -121,8 +121,8 @@ int sendfile(const char* filename, int sd, long long rest)
 		Lv2FsFile fd;
 		
 		// experimental "retry system" :P
-		int i;
-		for(i = 0; sysFsOpen(filename, LV2_O_RDONLY, &fd, NULL, 0) != 0 && i < 5; i++)
+		int i = 0;
+		for(; sysFsOpen(filename, LV2_O_RDONLY, &fd, NULL, 0) != 0 && i < 5; i++)
 		{
 			usleep(200000);
 		}
@@ -161,8 +161,8 @@ int recvfile(const char* filename, int sd, long long rest)
 		Lv2FsFile fd;
 		
 		// experimental "retry system" :P
-		int i;
-		for(i = 0; sysFsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) != 0 && i < 5; i++)
+		int i = 0;
+		for(; sysFsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) != 0 && i < 5; i++)
 		{
 			usleep(200000);
 		}

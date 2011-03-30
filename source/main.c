@@ -962,7 +962,7 @@ void opf_connectionhandler(u64 arg)
 		{
 			if((conn_s = (u64)accept(list_s, NULL, NULL)) > 0)
 			{
-				sys_ppu_thread_yield();
+				//sys_ppu_thread_yield();
 				sys_ppu_thread_create(&id, opf_clienthandler, conn_s, 1500, 0x2000, 0, "FTP Client");
 			}
 		}
