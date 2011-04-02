@@ -111,83 +111,62 @@ void sclose(int *sd)
 	}
 }
 
-int sendfile(const char* filename, int sd, long long rest)
+int fdtosd(int sd, Lv2FsFile fd, long long rest)
 {
 	int ret = -1;
-	char *buf = malloc(BUFFER_SIZE * sizeof(char));
+	char *buf = malloc(BUFFER_SIZE);
 	
 	if(buf != NULL)
 	{
-		Lv2FsFile fd;
+		ret = 0;
 		
-		// experimental "retry system" :P
-		int i = 0;
-		for(; sysFsOpen(filename, LV2_O_RDONLY, &fd, NULL, 0) != 0 && i < 5; i++)
+		u64 read, pos;
+		
+		if(rest > 0)
 		{
-			usleep(200000);
+			sysFsLseek(fd, rest, SEEK_SET, &pos);
 		}
 		
-		if(i < 5)
+		while(sysFsRead(fd, buf, BUFFER_SIZE, &read) == 0 && read > 0)
 		{
-			ret = 0;
-			
-			u64 read, pos;
-			sysFsLseek(fd, (s64)rest, SEEK_SET, &pos);
-			
-			while(sysFsRead(fd, buf, BUFFER_SIZE, &read) == 0 && read > 0)
+			if(send(sd, buf, (size_t)read, 0) < (size_t)read)
 			{
-				if((u64)send(sd, buf, (size_t)read, 0) < read)
-				{
-					ret = -1;
-					break;
-				}
+				ret = -1;
+				break;
 			}
 		}
 		
-		sysFsClose(fd);
 		free(buf);
 	}
 	
 	return ret;
 }
 
-int recvfile(const char* filename, int sd, long long rest)
+int sdtofd(Lv2FsFile fd, int sd, long long rest)
 {
 	int ret = -1;
-	char *buf = malloc(BUFFER_SIZE * sizeof(char));
+	char *buf = malloc(BUFFER_SIZE);
 	
 	if(buf != NULL)
 	{
-		Lv2FsFile fd;
+		ret = 0;
 		
-		// experimental "retry system" :P
-		int i = 0;
-		for(; sysFsOpen(filename, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) != 0 && i < 5; i++)
+		u64 read, written, pos;
+		
+		if(rest > 0)
 		{
-			usleep(200000);
+			sysFsLseek(fd, rest, SEEK_SET, &pos);
 		}
 		
-		if(i < 5)
+		while((read = (u64)recv(sd, buf, BUFFER_SIZE, MSG_WAITALL)) > 0)
 		{
-			ret = 0;
-			
-			u64 read, write, pos;
-			sysFsLseek(fd, (s64)rest, SEEK_SET, &pos);
-			
-			while((read = (u64)recv(sd, buf, BUFFER_SIZE, MSG_WAITALL)) > 0)
+			if(sysFsWrite(fd, buf, read, &written) != 0 || written < read)
 			{
-				if(sysFsWrite(fd, buf, read, &write) != 0 || write < read)
-				{
-					ret = -1;
-					break;
-				}
+				ret = -1;
+				break;
 			}
-			
-			lv2FsFsync(fd);
 		}
 		
-		sysFsClose(fd);
-		sysFsChmod(filename, 0644);
 		free(buf);
 	}
 	

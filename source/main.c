@@ -16,7 +16,7 @@
 */
 
 const char* TITLE	= "OpenPS3FTP";
-const char* VERSION	= "2.0";
+const char* VERSION	= "2.1";
 const char* AUTHOR	= "jjolano";
 
 #include <assert.h>
@@ -137,17 +137,16 @@ void opf_clienthandler(u64 arg)
 	int conn_s = (int)arg;
 	int data_s = -1;
 	
-	int connactive = 1;
 	int dataactive = 0;
 	int loggedin = 0;
 	long long rest = 0;
 	
 	char user[32];
 	char rnfr[256];
-	char cwd[256] = "/\0";
+	char cwd[256] = "/";
 	char path[256];
 	
-	char buffer[384];
+	char buffer[386];
 	size_t bytes;
 	
 	netSocketInfo p;
@@ -158,14 +157,14 @@ void opf_clienthandler(u64 arg)
 	int p2 = rand() % 256;
 	
 	char pasv_output[64];
-	sprintf(pasv_output, "227 Entering Passive Mode (%i,%i,%i,%i,%i,%i)\r\n", NIPQUAD(p.local_adr.s_addr), p1, p2);
+	int pasv_len = sprintf(pasv_output, "227 Entering Passive Mode (%i,%i,%i,%i,%i,%i)\r\n", NIPQUAD(p.local_adr.s_addr), p1, p2);
 	
-	sprintf(buffer, "220-%s by %s\r\n", TITLE, AUTHOR);
-	ssend(conn_s, buffer);
-	sprintf(buffer, "220 Version %s\r\n", VERSION);
-	ssend(conn_s, buffer);
+	bytes = sprintf(buffer, "220-%s by %s\r\n", TITLE, AUTHOR);
+	send(conn_s, buffer, bytes, 0);
+	bytes = sprintf(buffer, "220 Version %s\r\n", VERSION);
+	send(conn_s, buffer, bytes, 0);
 	
-	while(exitapp == 0 && connactive == 1 && (bytes = recv(conn_s, buffer, 383, 0)) > 0)
+	while(exitapp == 0 && (bytes = recv(conn_s, buffer, 383, 0)) > 0)
 	{
 		buffer[bytes - 1] = '\0';
 		buffer[bytes - 2] = '\0';
@@ -175,27 +174,31 @@ void opf_clienthandler(u64 arg)
 		
 		if(strcasecmp(cmd, "QUIT") == 0)
 		{
-			connactive = 0;
 			ssend(conn_s, "221 Bye!\r\n");
 			break;
 		}
 		else
+		if(strcasecmp(cmd, "CLNT") == 0)
+		{
+			ssend(conn_s, "200 Cool story, bro\r\n");
+		}
+		else
 		if(strcasecmp(cmd, "FEAT") == 0)
 		{
-			const char *feat[] =
+			char *feat[] =
 			{
-				"REST STREAM", "PASV", "PORT", "MDTM", "MLSD", "SIZE", "SITE CHMOD",
+				"REST STREAM", "PASV", "PORT", "MDTM", "MLSD", "SIZE", "SITE CHMOD", "APPE",
 				"MLST type*;size*;modify*;UNIX.mode*;UNIX.uid*;UNIX.gid*;"
 			};
 			
-			const int feat_count = sizeof(feat) / sizeof(char *);
+			int feat_count = sizeof(feat) / sizeof(char *);
 			
 			ssend(conn_s, "211-Features:\r\n");
 			
 			for(int i = 0; i < feat_count; i++)
 			{
-				sprintf(buffer, " %s\r\n", feat[i]);
-				ssend(conn_s, buffer);
+				bytes = sprintf(buffer, " %s\r\n", feat[i]);
+				send(conn_s, buffer, bytes, 0);
 			}
 			
 			ssend(conn_s, "211 End\r\n");
@@ -213,7 +216,7 @@ void opf_clienthandler(u64 arg)
 		else
 		if(loggedin == 1)
 		{
-			if(strcasecmp(cmd, "CWD") == 0)
+			if(strcasecmp(cmd, "CWD") == 0 || strcasecmp(cmd, "XCWD") == 0)
 			{
 				abspath(param, cwd, path);
 				
@@ -228,13 +231,13 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "PWD") == 0)
+			if(strcasecmp(cmd, "PWD") == 0 || strcasecmp(cmd, "XPWD") == 0)
 			{
-				sprintf(buffer, "257 \"%s\" is the current directory\r\n", cwd);
-				ssend(conn_s, buffer);
+				bytes = sprintf(buffer, "257 \"%s\" is the current directory\r\n", cwd);
+				send(conn_s, buffer, bytes, 0);
 			}
 			else
-			if(strcasecmp(cmd, "MKD") == 0)
+			if(strcasecmp(cmd, "MKD") == 0 || strcasecmp(cmd, "XMKD") == 0)
 			{
 				if(split == 1)
 				{
@@ -242,8 +245,8 @@ void opf_clienthandler(u64 arg)
 					
 					if(sysFsMkdir(path, 0755) == 0)
 					{
-						sprintf(buffer, "257 \"%s\" was successfully created\r\n", path);
-						ssend(conn_s, buffer);
+						bytes = sprintf(buffer, "257 \"%s\" was successfully created\r\n", path);
+						send(conn_s, buffer, bytes, 0);
 					}
 					else
 					{
@@ -252,7 +255,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "RMD") == 0)
+			if(strcasecmp(cmd, "RMD") == 0 || strcasecmp(cmd, "XRMD") == 0)
 			{
 				if(split == 1)
 				{
@@ -273,7 +276,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "CDUP") == 0)
+			if(strcasecmp(cmd, "CDUP") == 0 || strcasecmp(cmd, "XCUP") == 0)
 			{
 				int c;
 				int len = strlen(cwd) - 1;
@@ -289,7 +292,7 @@ void opf_clienthandler(u64 arg)
 					}
 				}
 				
-				ssend(conn_s, "250 Directory change successful\r\n");
+				ssend(conn_s, "200 Directory change successful\r\n");
 			}
 			else
 			if(strcasecmp(cmd, "PASV") == 0)
@@ -301,7 +304,7 @@ void opf_clienthandler(u64 arg)
 				
 				if(list_s > 0)
 				{
-					ssend(conn_s, pasv_output);
+					send(conn_s, pasv_output, pasv_len, 0);
 					
 					if((data_s = accept(list_s, NULL, NULL)) > 0)
 					{
@@ -344,8 +347,8 @@ void opf_clienthandler(u64 arg)
 						
 						if(sconnect(ipaddr, getPort(atoi(data[4]), atoi(data[5])), &data_s) == 0)
 						{
-							ssend(conn_s, "200 PORT command successful\r\n");
 							dataactive = 1;
+							ssend(conn_s, "200 PORT command successful\r\n");
 						}
 						else
 						{
@@ -382,33 +385,26 @@ void opf_clienthandler(u64 arg)
 						
 						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
-							abspath(entry.d_name, cwd, path);
-							
-							if(strcmp(path, "/app_home") == 0 || strcmp(path, "/host_root") == 0)
+							if(strcmp(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
 							{
 								continue;
 							}
 							
+							abspath(entry.d_name, cwd, path);
+							
 							Lv2FsStat buf;
 							sysFsStat(path, &buf);
 							
-							char tstr[16];
-							strftime(tstr, 15, "%b %d %H:%M", localtime(&buf.st_mtime));
+							bytes = sprintf(buffer, "+up%i%i%i,m%lu,%s,s%llu,\t%s\r\n",
+								(((buf.st_mode & S_IRUSR) != 0) * 4 + ((buf.st_mode & S_IWUSR) != 0) * 2 + ((buf.st_mode & S_IXUSR) != 0) * 1),
+								(((buf.st_mode & S_IRGRP) != 0) * 4 + ((buf.st_mode & S_IWGRP) != 0) * 2 + ((buf.st_mode & S_IXGRP) != 0) * 1),
+								(((buf.st_mode & S_IROTH) != 0) * 4 + ((buf.st_mode & S_IWOTH) != 0) * 2 + ((buf.st_mode & S_IXOTH) != 0) * 1),
+								(unsigned long)buf.st_mtime,
+								fis_dir(buf) ? "/" : "r",
+								(unsigned long long)buf.st_size,
+								entry.d_name);
 							
-							sprintf(buffer, "%s%s%s%s%s%s%s%s%s%s   1 root nobody     %llu %s %s\r\n",
-								((buf.st_mode & S_IFDIR) != 0) ? "d" : "-", 
-								((buf.st_mode & S_IRUSR) != 0) ? "r" : "-",
-								((buf.st_mode & S_IWUSR) != 0) ? "w" : "-",
-								((buf.st_mode & S_IXUSR) != 0) ? "x" : "-",
-								((buf.st_mode & S_IRGRP) != 0) ? "r" : "-",
-								((buf.st_mode & S_IWGRP) != 0) ? "w" : "-",
-								((buf.st_mode & S_IXGRP) != 0) ? "x" : "-",
-								((buf.st_mode & S_IROTH) != 0) ? "r" : "-",
-								((buf.st_mode & S_IWOTH) != 0) ? "w" : "-",
-								((buf.st_mode & S_IXOTH) != 0) ? "x" : "-",
-								(unsigned long long)buf.st_size, tstr, entry.d_name);
-							
-							ssend(data_s, buffer);
+							send(data_s, buffer, bytes, 0);
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
@@ -440,12 +436,12 @@ void opf_clienthandler(u64 arg)
 						
 						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
-							abspath(entry.d_name, cwd, path);
-							
-							if(strcmp(path, "/app_home") == 0 || strcmp(path, "/host_root") == 0)
+							if(strcmp(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
 							{
 								continue;
 							}
+							
+							abspath(entry.d_name, cwd, path);
 							
 							Lv2FsStat buf;
 							sysFsStat(path, &buf);
@@ -470,7 +466,7 @@ void opf_clienthandler(u64 arg)
 							
 							dirtype[1] = '\0';
 							
-							sprintf(buffer, "type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
+							bytes = sprintf(buffer, "type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
 								dirtype,
 								fis_dir(buf) ? "dir" : "file",
 								fis_dir(buf) ? "d" : "e", (unsigned long long)buf.st_size, tstr,
@@ -479,7 +475,7 @@ void opf_clienthandler(u64 arg)
 								(((buf.st_mode & S_IROTH) != 0) * 4 + ((buf.st_mode & S_IWOTH) != 0) * 2 + ((buf.st_mode & S_IXOTH) != 0) * 1),
 								entry.d_name);
 							
-							ssend(data_s, buffer);
+							send(data_s, buffer, bytes, 0);
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
@@ -509,12 +505,12 @@ void opf_clienthandler(u64 arg)
 					
 					while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 					{
-						abspath(entry.d_name, cwd, path);
-						
-						if(strcmp(path, "/app_home") == 0 || strcmp(path, "/host_root") == 0)
+						if(strcmp(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
 						{
 							continue;
 						}
+						
+						abspath(entry.d_name, cwd, path);
 						
 						Lv2FsStat buf;
 						sysFsStat(path, &buf);
@@ -539,7 +535,7 @@ void opf_clienthandler(u64 arg)
 						
 						dirtype[1] = '\0';
 						
-						sprintf(buffer, " type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
+						bytes = sprintf(buffer, " type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
 							dirtype,
 							fis_dir(buf) ? "dir" : "file",
 							fis_dir(buf) ? "d" : "e", (unsigned long long)buf.st_size, tstr,
@@ -548,7 +544,7 @@ void opf_clienthandler(u64 arg)
 							(((buf.st_mode & S_IROTH) != 0) * 4 + ((buf.st_mode & S_IWOTH) != 0) * 2 + ((buf.st_mode & S_IXOTH) != 0) * 1),
 							entry.d_name);
 						
-						ssend(conn_s, buffer);
+						send(conn_s, buffer, bytes, 0);
 					}
 					
 					ssend(conn_s, "250 End\r\n");
@@ -575,8 +571,8 @@ void opf_clienthandler(u64 arg)
 						
 						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
-							sprintf(buffer, "%s\r\n", entry.d_name);
-							ssend(data_s, buffer);
+							bytes = sprintf(buffer, "%s\r\n", entry.d_name);
+							send(data_s, buffer, bytes, 0);
 						}
 						
 						ssend(conn_s, "226 Transfer complete\r\n");
@@ -594,6 +590,47 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
+			if(strcasecmp(cmd, "APPE") == 0)
+			{
+				if(data_s > 0)
+				{
+					if(split == 1)
+					{
+						abspath(param, cwd, path);
+						
+						Lv2FsFile fd;
+						if(sysFsOpen(path, LV2_O_WRONLY | LV2_O_CREAT | LV2_O_APPEND, &fd, NULL, 0) == 0)
+						{
+							ssend(conn_s, "150 Accepted data connection\r\n");
+							
+							if(sdtofd(fd, data_s, 0) == 0)
+							{
+								ssend(conn_s, "226 Transfer complete\r\n");
+							}
+							else
+							{
+								ssend(conn_s, "451 Transfer failed\r\n");
+							}
+						}
+						else
+						{
+							ssend(conn_s, "550 Cannot open file\r\n");
+						}
+						
+						sysFsClose(fd);
+						sysFsChmod(path, 0644);
+					}
+					else
+					{
+						ssend(conn_s, "501 No filename specified\r\n");
+					}
+				}
+				else
+				{
+					ssend(conn_s, "425 No data connection\r\n");
+				}
+			}
+			else
 			if(strcasecmp(cmd, "STOR") == 0)
 			{
 				if(data_s > 0)
@@ -602,16 +639,27 @@ void opf_clienthandler(u64 arg)
 					{
 						abspath(param, cwd, path);
 						
-						ssend(conn_s, "150 Accepted data connection\r\n");
-						
-						if(recvfile(path, data_s, rest) == 0)
+						Lv2FsFile fd;
+						if(sysFsOpen(path, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) == 0)
 						{
-							ssend(conn_s, "226 Transfer complete\r\n");
+							ssend(conn_s, "150 Accepted data connection\r\n");
+							
+							if(sdtofd(fd, data_s, rest) == 0)
+							{
+								ssend(conn_s, "226 Transfer complete\r\n");
+							}
+							else
+							{
+								ssend(conn_s, "451 Transfer failed\r\n");
+							}
 						}
 						else
 						{
-							ssend(conn_s, "451 Transfer failed\r\n");
+							ssend(conn_s, "550 Cannot open file\r\n");
 						}
+						
+						sysFsClose(fd);
+						sysFsChmod(path, 0644);
 					}
 					else
 					{
@@ -632,11 +680,12 @@ void opf_clienthandler(u64 arg)
 					{
 						abspath(param, cwd, path);
 						
-						if(exists(path) == 0)
+						Lv2FsFile fd;
+						if(sysFsOpen(path, LV2_O_RDONLY, &fd, NULL, 0) == 0)
 						{
 							ssend(conn_s, "150 Accepted data connection\r\n");
 							
-							if(sendfile(path, data_s, rest) == 0)
+							if(fdtosd(data_s, fd, rest) == 0)
 							{
 								ssend(conn_s, "226 Transfer complete\r\n");
 							}
@@ -647,8 +696,10 @@ void opf_clienthandler(u64 arg)
 						}
 						else
 						{
-							ssend(conn_s, "550 File does not exist\r\n");
+							ssend(conn_s, "550 Cannot open file\r\n");
 						}
+						
+						sysFsClose(fd);
 					}
 					else
 					{
@@ -663,19 +714,43 @@ void opf_clienthandler(u64 arg)
 			else
 			if(strcasecmp(cmd, "TYPE") == 0)
 			{
-				ssend(conn_s, "200 TYPE command successful\r\n");
 				dataactive = 1;
+				ssend(conn_s, "200 TYPE command successful\r\n");
+			}
+			else
+			if(strcasecmp(cmd, "STRU") == 0)
+			{
+				if(strcasecmp(param, "F") == 0)
+				{
+					ssend(conn_s, "200 STRU command successful\r\n");
+				}
+				else
+				{
+					ssend(conn_s, "504 STRU command failed\r\n");
+				}
+			}
+			else
+			if(strcasecmp(cmd, "MODE") == 0)
+			{
+				if(strcasecmp(param, "S") == 0)
+				{
+					ssend(conn_s, "200 MODE command successful\r\n");
+				}
+				else
+				{
+					ssend(conn_s, "504 STRU command failed\r\n");
+				}
 			}
 			else
 			if(strcasecmp(cmd, "REST") == 0)
 			{
 				if(split == 1)
 				{
-					unsigned long long i = atoll(param);
+					long long temprest = atoll(param);
 					
-					if(i >= 0)
+					if(temprest >= 0)
 					{
-						rest = i;
+						rest = temprest;
 						dataactive = 1;
 						ssend(conn_s, "350 REST command successful\r\n");
 					}
@@ -839,8 +914,8 @@ void opf_clienthandler(u64 arg)
 					Lv2FsStat buf;
 					if(sysFsStat(path, &buf) == 0)
 					{
-						sprintf(buffer, "213 %llu\r\n", (unsigned long long)buf.st_size);
-						ssend(conn_s, buffer);
+						bytes = sprintf(buffer, "213 %llu\r\n", (unsigned long long)buf.st_size);
+						send(conn_s, buffer, bytes, 0);
 					}
 					else
 					{
@@ -862,9 +937,9 @@ void opf_clienthandler(u64 arg)
 					Lv2FsStat buf;
 					if(sysFsStat(path, &buf) == 0)
 					{
-						char tstr[32];
-						strftime(tstr, 31, "213 %Y%m%d%H%M%S\r\n", localtime(&buf.st_mtime));
-						ssend(conn_s, tstr);
+						char tstr[21];
+						strftime(tstr, 20, "213 %Y%m%d%H%M%S\r\n", localtime(&buf.st_mtime));
+						send(conn_s, tstr, 20, 0);
 					}
 					else
 					{
@@ -875,6 +950,11 @@ void opf_clienthandler(u64 arg)
 				{
 					ssend(conn_s, "501 No file specified\r\n");
 				}
+			}
+			else
+			if(strcasecmp(cmd, "ALLO") == 0)
+			{
+				ssend(conn_s, "202 ALLO command successful\r\n");
 			}
 			else
 			if(strcasecmp(cmd, "USER") == 0 || strcasecmp(cmd, "PASS") == 0)
@@ -902,8 +982,8 @@ void opf_clienthandler(u64 arg)
 				if(split == 1)
 				{
 					strcpy(user, param);
-					sprintf(buffer, "331 User %s OK. Password required\r\n", user);
-					ssend(conn_s, buffer);
+					bytes = sprintf(buffer, "331 User %s OK. Password required\r\n", user);
+					send(conn_s, buffer, bytes, 0);
 				}
 				else
 				{
@@ -915,15 +995,19 @@ void opf_clienthandler(u64 arg)
 			{
 				if(split == 1)
 				{
-					if(DISABLE_PASS || (strcmp(user, DEFAULT_USER) == 0 && strcmp(param, userpass) == 0))
+					#if DISABLE_PASS == 0
+					if(strcmp(user, DEFAULT_USER) == 0 && strcmp(param, userpass) == 0)
 					{
+					#endif
 						loggedin = 1;
 						ssend(conn_s, "230 Login successful\r\n");
+					#if DISABLE_PASS == 0
 					}
 					else
 					{
-						ssend(conn_s, "430 Invalid username or password\r\n");
+						ssend(conn_s, "530 Invalid username or password\r\n");
 					}
+					#endif
 				}
 				else
 				{
@@ -962,7 +1046,6 @@ void opf_connectionhandler(u64 arg)
 		{
 			if((conn_s = (u64)accept(list_s, NULL, NULL)) > 0)
 			{
-				//sys_ppu_thread_yield();
 				sys_ppu_thread_create(&id, opf_clienthandler, conn_s, 1500, 0x2000, 0, "FTP Client");
 			}
 		}
@@ -1067,11 +1150,13 @@ int main()
 				|| paddata.BTN_CROSS || paddata.BTN_SQUARE || paddata.BTN_CIRCLE || paddata.BTN_TRIANGLE)
 				{
 					ssactive = 2;
+					break;
 				}
 				
 				if(paddata.BTN_SELECT && paddata.BTN_START)
 				{
 					exitapp = 1;
+					break;
 				}
 			}
 		}

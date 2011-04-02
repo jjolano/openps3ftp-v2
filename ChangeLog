@@ -1,3 +1,11 @@
+[Version 2.1 - April 2, 2011]
+- Code optimizations
+- Some caching improvements (better response time)
+- File transfer code rewritten
+- More RFC compliance
+- Added more FTP commands
+- Changed LIST output format to EPLF
+
 [Version 2.0 - March 23, 2011]
 - Changed ICON0.PNG
 - Moved to a different XMB category (now under Network)
