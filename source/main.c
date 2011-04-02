@@ -146,7 +146,7 @@ void opf_clienthandler(u64 arg)
 	char cwd[256] = "/";
 	char path[256];
 	
-	char buffer[386];
+	char buffer[356];
 	size_t bytes;
 	
 	netSocketInfo p;
@@ -164,7 +164,7 @@ void opf_clienthandler(u64 arg)
 	bytes = sprintf(buffer, "220 Version %s\r\n", VERSION);
 	send(conn_s, buffer, bytes, 0);
 	
-	while(exitapp == 0 && (bytes = recv(conn_s, buffer, 383, 0)) > 0)
+	while(exitapp == 0 && (bytes = recv(conn_s, buffer, 355, 0)) > 0)
 	{
 		buffer[bytes - 1] = '\0';
 		buffer[bytes - 2] = '\0';
