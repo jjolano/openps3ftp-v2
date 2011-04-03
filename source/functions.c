@@ -16,6 +16,7 @@
 */
 
 #include "common.h"
+#include "functions.h"
 
 void abspath(const char* relpath, const char* cwd, char* abspath)
 {
@@ -36,6 +37,12 @@ void abspath(const char* relpath, const char* cwd, char* abspath)
 		
 		strcat(abspath, relpath);
 	}
+}
+
+void strtoupper(char* str)
+{
+	do if(96 == (224 & *str)) *str &= 223;
+	while(*str++);
 }
 
 int exists(const char* path)

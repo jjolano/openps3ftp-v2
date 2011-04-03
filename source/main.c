@@ -16,7 +16,7 @@
 */
 
 const char* TITLE	= "OpenPS3FTP";
-const char* VERSION	= "2.1";
+const char* VERSION	= "2.1.1";
 const char* AUTHOR	= "jjolano";
 
 #include <assert.h>
@@ -36,6 +36,7 @@ const char* AUTHOR	= "jjolano";
 #include <io/pad.h>
 
 #include "common.h"
+#include "functions.h"
 #include "sconsole.h"
 
 char userpass[64];
@@ -150,7 +151,7 @@ void opf_clienthandler(u64 arg)
 	size_t bytes;
 	
 	netSocketInfo p;
-	netGetSockInfo(FD(conn_s), &p, 1);
+	netGetSockInfo(conn_s & ~SOCKET_FD_MASK, &p, 1);
 	
 	srand(conn_s);
 	int p1 = (rand() % 251) + 4;
@@ -172,18 +173,20 @@ void opf_clienthandler(u64 arg)
 		char cmd[16], param[256];
 		int split = ssplit(buffer, cmd, 15, param, 255);
 		
-		if(strcasecmp(cmd, "QUIT") == 0)
+		strtoupper(cmd);
+		
+		if(strcmp2(cmd, "QUIT") == 0)
 		{
 			ssend(conn_s, "221 Bye!\r\n");
 			break;
 		}
 		else
-		if(strcasecmp(cmd, "CLNT") == 0)
+		if(strcmp2(cmd, "CLNT") == 0)
 		{
 			ssend(conn_s, "200 Cool story, bro\r\n");
 		}
 		else
-		if(strcasecmp(cmd, "FEAT") == 0)
+		if(strcmp2(cmd, "FEAT") == 0)
 		{
 			char *feat[] =
 			{
@@ -204,19 +207,19 @@ void opf_clienthandler(u64 arg)
 			ssend(conn_s, "211 End\r\n");
 		}
 		else
-		if(strcasecmp(cmd, "SYST") == 0)
+		if(strcmp2(cmd, "SYST") == 0)
 		{
 			ssend(conn_s, "215 UNIX Type: L8\r\n");
 		}
 		else
-		if(strcasecmp(cmd, "NOOP") == 0)
+		if(strcmp2(cmd, "NOOP") == 0)
 		{
 			ssend(conn_s, "200 NOOP command successful\r\n");
 		}
 		else
 		if(loggedin == 1)
 		{
-			if(strcasecmp(cmd, "CWD") == 0 || strcasecmp(cmd, "XCWD") == 0)
+			if(strcmp2(cmd, "CWD") == 0 || strcmp2(cmd, "XCWD") == 0)
 			{
 				abspath(param, cwd, path);
 				
@@ -231,13 +234,13 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "PWD") == 0 || strcasecmp(cmd, "XPWD") == 0)
+			if(strcmp2(cmd, "PWD") == 0 || strcmp2(cmd, "XPWD") == 0)
 			{
 				bytes = sprintf(buffer, "257 \"%s\" is the current directory\r\n", cwd);
 				send(conn_s, buffer, bytes, 0);
 			}
 			else
-			if(strcasecmp(cmd, "MKD") == 0 || strcasecmp(cmd, "XMKD") == 0)
+			if(strcmp2(cmd, "MKD") == 0 || strcmp2(cmd, "XMKD") == 0)
 			{
 				if(split == 1)
 				{
@@ -255,7 +258,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "RMD") == 0 || strcasecmp(cmd, "XRMD") == 0)
+			if(strcmp2(cmd, "RMD") == 0 || strcmp2(cmd, "XRMD") == 0)
 			{
 				if(split == 1)
 				{
@@ -276,7 +279,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "CDUP") == 0 || strcasecmp(cmd, "XCUP") == 0)
+			if(strcmp2(cmd, "CDUP") == 0 || strcmp2(cmd, "XCUP") == 0)
 			{
 				int c;
 				int len = strlen(cwd) - 1;
@@ -295,7 +298,7 @@ void opf_clienthandler(u64 arg)
 				ssend(conn_s, "200 Directory change successful\r\n");
 			}
 			else
-			if(strcasecmp(cmd, "PASV") == 0)
+			if(strcmp2(cmd, "PASV") == 0)
 			{
 				sclose(&data_s);
 				rest = 0;
@@ -323,7 +326,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "PORT") == 0)
+			if(strcmp2(cmd, "PORT") == 0)
 			{
 				if(split == 1)
 				{
@@ -366,12 +369,12 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "ABOR") == 0)
+			if(strcmp2(cmd, "ABOR") == 0)
 			{
 				ssend(conn_s, "226 ABOR command successful\r\n");
 			}
 			else
-			if(strcasecmp(cmd, "LIST") == 0)
+			if(strcmp2(cmd, "LIST") == 0)
 			{
 				if(data_s > 0)
 				{
@@ -385,7 +388,7 @@ void opf_clienthandler(u64 arg)
 						
 						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
-							if(strcmp(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
+							if(strcmp2(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
 							{
 								continue;
 							}
@@ -395,6 +398,23 @@ void opf_clienthandler(u64 arg)
 							Lv2FsStat buf;
 							sysFsStat(path, &buf);
 							
+							char tstr[16];
+							strftime(tstr, 15, "%b %d %H:%M", localtime(&buf.st_mtime));
+							
+							bytes = sprintf(buffer, "%s%s%s%s%s%s%s%s%s%s   1 nobody   nobody       %llu %s %s\r\n",
+								((buf.st_mode & S_IFDIR) != 0) ? "d" : "-", 
+								((buf.st_mode & S_IRUSR) != 0) ? "r" : "-",
+								((buf.st_mode & S_IWUSR) != 0) ? "w" : "-",
+								((buf.st_mode & S_IXUSR) != 0) ? "x" : "-",
+								((buf.st_mode & S_IRGRP) != 0) ? "r" : "-",
+								((buf.st_mode & S_IWGRP) != 0) ? "w" : "-",
+								((buf.st_mode & S_IXGRP) != 0) ? "x" : "-",
+								((buf.st_mode & S_IROTH) != 0) ? "r" : "-",
+								((buf.st_mode & S_IWOTH) != 0) ? "w" : "-",
+								((buf.st_mode & S_IXOTH) != 0) ? "x" : "-",
+								(unsigned long long)buf.st_size, tstr, entry.d_name);
+							
+							/*// EPLF output
 							bytes = sprintf(buffer, "+up%i%i%i,m%lu,%s,s%llu,\t%s\r\n",
 								(((buf.st_mode & S_IRUSR) != 0) * 4 + ((buf.st_mode & S_IWUSR) != 0) * 2 + ((buf.st_mode & S_IXUSR) != 0) * 1),
 								(((buf.st_mode & S_IRGRP) != 0) * 4 + ((buf.st_mode & S_IWGRP) != 0) * 2 + ((buf.st_mode & S_IXGRP) != 0) * 1),
@@ -403,6 +423,7 @@ void opf_clienthandler(u64 arg)
 								fis_dir(buf) ? "/" : "r",
 								(unsigned long long)buf.st_size,
 								entry.d_name);
+							*/
 							
 							send(data_s, buffer, bytes, 0);
 						}
@@ -422,7 +443,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "MLSD") == 0)
+			if(strcmp2(cmd, "MLSD") == 0)
 			{
 				if(data_s > 0)
 				{
@@ -436,7 +457,7 @@ void opf_clienthandler(u64 arg)
 						
 						while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 						{
-							if(strcmp(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
+							if(strcmp2(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
 							{
 								continue;
 							}
@@ -450,12 +471,12 @@ void opf_clienthandler(u64 arg)
 							strftime(tstr, 15, "%Y%m%d%H%M%S", localtime(&buf.st_mtime));
 							
 							char dirtype[2];
-							if(strcmp(entry.d_name, ".") == 0)
+							if(strcmp2(entry.d_name, ".") == 0)
 							{
 								dirtype[0] = 'c';
 							}
 							else
-							if(strcmp(entry.d_name, "..") == 0)
+							if(strcmp2(entry.d_name, "..") == 0)
 							{
 								dirtype[0] = 'p';
 							}
@@ -466,7 +487,7 @@ void opf_clienthandler(u64 arg)
 							
 							dirtype[1] = '\0';
 							
-							bytes = sprintf(buffer, "type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
+							bytes = sprintf(buffer, "type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=nobody;UNIX.gid=nobody; %s\r\n",
 								dirtype,
 								fis_dir(buf) ? "dir" : "file",
 								fis_dir(buf) ? "d" : "e", (unsigned long long)buf.st_size, tstr,
@@ -493,7 +514,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "MLST") == 0)
+			if(strcmp2(cmd, "MLST") == 0)
 			{
 				Lv2FsFile fd;
 				if(sysFsOpendir(cwd, &fd) == 0)
@@ -505,7 +526,7 @@ void opf_clienthandler(u64 arg)
 					
 					while(sysFsReaddir(fd, &entry, &read) == 0 && read > 0)
 					{
-						if(strcmp(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
+						if(strcmp2(cwd, "/") == 0 && strncmp(entry.d_name, "dev_", 4) != 0)
 						{
 							continue;
 						}
@@ -519,12 +540,12 @@ void opf_clienthandler(u64 arg)
 						strftime(tstr, 15, "%Y%m%d%H%M%S", localtime(&buf.st_mtime));
 						
 						char dirtype[2];
-						if(strcmp(entry.d_name, ".") == 0)
+						if(strcmp2(entry.d_name, ".") == 0)
 						{
 							dirtype[0] = 'c';
 						}
 						else
-						if(strcmp(entry.d_name, "..") == 0)
+						if(strcmp2(entry.d_name, "..") == 0)
 						{
 							dirtype[0] = 'p';
 						}
@@ -535,7 +556,7 @@ void opf_clienthandler(u64 arg)
 						
 						dirtype[1] = '\0';
 						
-						bytes = sprintf(buffer, " type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=root;UNIX.gid=nobody; %s\r\n",
+						bytes = sprintf(buffer, " type=%s%s;siz%s=%llu;modify=%s;UNIX.mode=0%i%i%i;UNIX.uid=nobody;UNIX.gid=nobody; %s\r\n",
 							dirtype,
 							fis_dir(buf) ? "dir" : "file",
 							fis_dir(buf) ? "d" : "e", (unsigned long long)buf.st_size, tstr,
@@ -557,7 +578,7 @@ void opf_clienthandler(u64 arg)
 				sysFsClosedir(fd);
 			}
 			else
-			if(strcasecmp(cmd, "NLST") == 0)
+			if(strcmp2(cmd, "NLST") == 0)
 			{
 				if(data_s > 0)
 				{
@@ -590,7 +611,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "APPE") == 0)
+			if(strcmp2(cmd, "STOR") == 0 || strcmp2(cmd, "APPE") == 0)
 			{
 				if(data_s > 0)
 				{
@@ -599,11 +620,11 @@ void opf_clienthandler(u64 arg)
 						abspath(param, cwd, path);
 						
 						Lv2FsFile fd;
-						if(sysFsOpen(path, LV2_O_WRONLY | LV2_O_CREAT | LV2_O_APPEND, &fd, NULL, 0) == 0)
+						if(sysFsOpen(path, LV2_O_WRONLY | LV2_O_CREAT | (strcmp2(cmd, "APPE") == 0 ? LV2_O_APPEND : (rest == 0 ? LV2_O_TRUNC : 0)), &fd, NULL, 0) == 0)
 						{
 							ssend(conn_s, "150 Accepted data connection\r\n");
 							
-							if(sdtofd(fd, data_s, 0) == 0)
+							if(sdtofd(fd, data_s, (strcmp2(cmd, "APPE") == 0 ? 0 : rest)) == 0)
 							{
 								ssend(conn_s, "226 Transfer complete\r\n");
 							}
@@ -618,7 +639,11 @@ void opf_clienthandler(u64 arg)
 						}
 						
 						sysFsClose(fd);
-						sysFsChmod(path, 0644);
+						
+						if(strcmp2(cmd, "STOR") == 0)
+						{
+							sysFsChmod(path, 0644);
+						}
 					}
 					else
 					{
@@ -631,48 +656,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "STOR") == 0)
-			{
-				if(data_s > 0)
-				{
-					if(split == 1)
-					{
-						abspath(param, cwd, path);
-						
-						Lv2FsFile fd;
-						if(sysFsOpen(path, LV2_O_WRONLY | LV2_O_CREAT | (rest == 0 ? LV2_O_TRUNC : 0), &fd, NULL, 0) == 0)
-						{
-							ssend(conn_s, "150 Accepted data connection\r\n");
-							
-							if(sdtofd(fd, data_s, rest) == 0)
-							{
-								ssend(conn_s, "226 Transfer complete\r\n");
-							}
-							else
-							{
-								ssend(conn_s, "451 Transfer failed\r\n");
-							}
-						}
-						else
-						{
-							ssend(conn_s, "550 Cannot open file\r\n");
-						}
-						
-						sysFsClose(fd);
-						sysFsChmod(path, 0644);
-					}
-					else
-					{
-						ssend(conn_s, "501 No filename specified\r\n");
-					}
-				}
-				else
-				{
-					ssend(conn_s, "425 No data connection\r\n");
-				}
-			}
-			else
-			if(strcasecmp(cmd, "RETR") == 0)
+			if(strcmp2(cmd, "RETR") == 0)
 			{
 				if(data_s > 0)
 				{
@@ -712,15 +696,15 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "TYPE") == 0)
+			if(strcmp2(cmd, "TYPE") == 0)
 			{
 				dataactive = 1;
 				ssend(conn_s, "200 TYPE command successful\r\n");
 			}
 			else
-			if(strcasecmp(cmd, "STRU") == 0)
+			if(strcmp2(cmd, "STRU") == 0)
 			{
-				if(strcasecmp(param, "F") == 0)
+				if(strcmp2(param, "F") == 0)
 				{
 					ssend(conn_s, "200 STRU command successful\r\n");
 				}
@@ -730,9 +714,9 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "MODE") == 0)
+			if(strcmp2(cmd, "MODE") == 0)
 			{
-				if(strcasecmp(param, "S") == 0)
+				if(strcmp2(param, "S") == 0)
 				{
 					ssend(conn_s, "200 MODE command successful\r\n");
 				}
@@ -742,7 +726,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "REST") == 0)
+			if(strcmp2(cmd, "REST") == 0)
 			{
 				if(split == 1)
 				{
@@ -765,7 +749,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "DELE") == 0)
+			if(strcmp2(cmd, "DELE") == 0)
 			{
 				if(split == 1)
 				{
@@ -786,7 +770,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "RNFR") == 0)
+			if(strcmp2(cmd, "RNFR") == 0)
 			{
 				if(split == 1)
 				{
@@ -808,7 +792,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "RNTO") == 0)
+			if(strcmp2(cmd, "RNTO") == 0)
 			{
 				if(split == 1)
 				{
@@ -829,12 +813,14 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "SITE") == 0)
+			if(strcmp2(cmd, "SITE") == 0)
 			{
 				char param2[256];
 				split = ssplit(param, cmd, 15, param2, 255);
 				
-				if(strcasecmp(cmd, "CHMOD") == 0)
+				strtoupper(cmd);
+				
+				if(strcmp2(cmd, "CHMOD") == 0)
 				{
 					char param3[4], filename[256];
 					split = ssplit(param2, param3, 3, filename, 255);
@@ -861,7 +847,7 @@ void opf_clienthandler(u64 arg)
 					}
 				}
 				else
-				if(strcasecmp(cmd, "PASSWD") == 0)
+				if(strcmp2(cmd, "PASSWD") == 0)
 				{
 					if(split == 1)
 					{
@@ -884,14 +870,14 @@ void opf_clienthandler(u64 arg)
 					}
 				}
 				else
-				if(strcasecmp(cmd, "EXITAPP") == 0)
+				if(strcmp2(cmd, "EXITAPP") == 0)
 				{
 					exitapp = 1;
 					ssend(conn_s, "221 Exiting...\r\n");
 					break;
 				}
 				else
-				if(strcasecmp(cmd, "HELP") == 0)
+				if(strcmp2(cmd, "HELP") == 0)
 				{
 					ssend(conn_s, "214-Special commands:\r\n");
 					ssend(conn_s, " SITE PASSWD <newpassword> - Change your password\r\n");
@@ -905,7 +891,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "SIZE") == 0)
+			if(strcmp2(cmd, "SIZE") == 0)
 			{
 				if(split == 1)
 				{
@@ -928,7 +914,7 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "MDTM") == 0)
+			if(strcmp2(cmd, "MDTM") == 0)
 			{
 				if(split == 1)
 				{
@@ -952,12 +938,12 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "ALLO") == 0)
+			if(strcmp2(cmd, "ALLO") == 0)
 			{
 				ssend(conn_s, "202 ALLO command successful\r\n");
 			}
 			else
-			if(strcasecmp(cmd, "USER") == 0 || strcasecmp(cmd, "PASS") == 0)
+			if(strcmp2(cmd, "USER") == 0 || strcmp2(cmd, "PASS") == 0)
 			{
 				ssend(conn_s, "230 You are already logged in\r\n");
 			}
@@ -977,7 +963,7 @@ void opf_clienthandler(u64 arg)
 		}
 		else
 		{
-			if(strcasecmp(cmd, "USER") == 0)
+			if(strcmp2(cmd, "USER") == 0)
 			{
 				if(split == 1)
 				{
@@ -991,12 +977,12 @@ void opf_clienthandler(u64 arg)
 				}
 			}
 			else
-			if(strcasecmp(cmd, "PASS") == 0)
+			if(strcmp2(cmd, "PASS") == 0)
 			{
 				if(split == 1)
 				{
 					#if DISABLE_PASS == 0
-					if(strcmp(user, DEFAULT_USER) == 0 && strcmp(param, userpass) == 0)
+					if(strcmp2(user, DEFAULT_USER) == 0 && strcmp2(param, userpass) == 0)
 					{
 					#endif
 						loggedin = 1;

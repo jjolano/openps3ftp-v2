@@ -1,3 +1,7 @@
+[Version 2.1.1 - April 3, 2011]
+- More optimizations (improved response times)
+- Reverted LIST format to support old clients
+
 [Version 2.1 - April 2, 2011]
 - Code optimizations
 - Some caching improvements (better response time)

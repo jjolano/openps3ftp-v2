@@ -10,11 +10,8 @@
 #include <sys/sysfs.h>
 #include <net/net.h>
 
-#include "functions.h"
-
 // macros
-#define getPort(p1,p2) ((p1 * 256) + p2)
-#define FD(socket) (socket & ~SOCKET_FD_MASK)
+#define getPort(p1,p2) (p1 << 8 | p2)
 #define NIPQUAD(addr) \
          ((unsigned char *)&addr)[0], \
          ((unsigned char *)&addr)[1], \
