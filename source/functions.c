@@ -54,8 +54,7 @@ int exists(const char* path)
 int is_dir(const char* path)
 {
 	Lv2FsStat entry;
-	sysFsStat(path, &entry);
-	return fis_dir(entry);
+	return (sysFsStat(path, &entry) == 0) ? fis_dir(entry) : -1;
 }
 
 int ssplit(const char* str, char* left, int lmaxlen, char* right, int rmaxlen)

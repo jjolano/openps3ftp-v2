@@ -402,7 +402,7 @@ void opf_clienthandler(u64 arg)
 							strftime(tstr, 15, "%b %d %H:%M", localtime(&buf.st_mtime));
 							
 							bytes = sprintf(buffer, "%s%s%s%s%s%s%s%s%s%s   1 nobody   nobody       %llu %s %s\r\n",
-								((buf.st_mode & S_IFDIR) != 0) ? "d" : "-", 
+								fis_dir(buf) ? "d" : "-", 
 								((buf.st_mode & S_IRUSR) != 0) ? "r" : "-",
 								((buf.st_mode & S_IWUSR) != 0) ? "w" : "-",
 								((buf.st_mode & S_IXUSR) != 0) ? "x" : "-",
