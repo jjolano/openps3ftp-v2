@@ -16,7 +16,7 @@
 */
 
 const char* TITLE	= "OpenPS3FTP";
-const char* VERSION	= "2.1.1";
+const char* VERSION	= "2.2";
 const char* AUTHOR	= "jjolano";
 
 #include <assert.h>
@@ -138,7 +138,7 @@ void opf_clienthandler(u64 arg)
 	int conn_s = (int)arg;
 	int data_s = -1;
 	
-	int dataactive = 0;
+	int dataactive = -1;
 	int loggedin = 0;
 	long long rest = 0;
 	
@@ -147,7 +147,7 @@ void opf_clienthandler(u64 arg)
 	char cwd[256] = "/";
 	char path[256];
 	
-	char buffer[356];
+	char buffer[384];
 	size_t bytes;
 	
 	netSocketInfo p;
@@ -160,12 +160,10 @@ void opf_clienthandler(u64 arg)
 	char pasv_output[64];
 	int pasv_len = sprintf(pasv_output, "227 Entering Passive Mode (%i,%i,%i,%i,%i,%i)\r\n", NIPQUAD(p.local_adr.s_addr), p1, p2);
 	
-	bytes = sprintf(buffer, "220-%s by %s\r\n", TITLE, AUTHOR);
-	send(conn_s, buffer, bytes, 0);
-	bytes = sprintf(buffer, "220 Version %s\r\n", VERSION);
+	bytes = sprintf(buffer, "220-%s by %s\r\n220 Version %s\r\n", TITLE, AUTHOR, VERSION);
 	send(conn_s, buffer, bytes, 0);
 	
-	while(exitapp == 0 && (bytes = recv(conn_s, buffer, 355, 0)) > 0)
+	while(exitapp == 0 && (bytes = recv(conn_s, buffer, 272, 0)) > 0)
 	{
 		buffer[bytes - 1] = '\0';
 		buffer[bytes - 2] = '\0';
@@ -355,6 +353,7 @@ void opf_clienthandler(u64 arg)
 						}
 						else
 						{
+							dataactive = 0;
 							ssend(conn_s, "451 Data connection failed\r\n");
 						}
 					}
@@ -371,12 +370,13 @@ void opf_clienthandler(u64 arg)
 			else
 			if(strcmp2(cmd, "ABOR") == 0)
 			{
+				dataactive = 0;
 				ssend(conn_s, "226 ABOR command successful\r\n");
 			}
 			else
 			if(strcmp2(cmd, "LIST") == 0)
 			{
-				if(data_s > 0)
+				if(data_s > 0 || sconnect(inet_ntoa(p.remote_adr), 20, &data_s) == 0)
 				{
 					Lv2FsFile fd;
 					if(sysFsOpendir(cwd, &fd) == 0)
@@ -441,11 +441,13 @@ void opf_clienthandler(u64 arg)
 				{
 					ssend(conn_s, "425 No data connection\r\n");
 				}
+				
+				dataactive = 0;
 			}
 			else
 			if(strcmp2(cmd, "MLSD") == 0)
 			{
-				if(data_s > 0)
+				if(data_s > 0 || sconnect(inet_ntoa(p.remote_adr), 20, &data_s) == 0)
 				{
 					Lv2FsFile fd;
 					if(sysFsOpendir(cwd, &fd) == 0)
@@ -512,6 +514,8 @@ void opf_clienthandler(u64 arg)
 				{
 					ssend(conn_s, "425 No data connection\r\n");
 				}
+				
+				dataactive = 0;
 			}
 			else
 			if(strcmp2(cmd, "MLST") == 0)
@@ -580,7 +584,7 @@ void opf_clienthandler(u64 arg)
 			else
 			if(strcmp2(cmd, "NLST") == 0)
 			{
-				if(data_s > 0)
+				if(data_s > 0 || sconnect(inet_ntoa(p.remote_adr), 20, &data_s) == 0)
 				{
 					Lv2FsFile fd;
 					if(sysFsOpendir(cwd, &fd) == 0)
@@ -609,11 +613,13 @@ void opf_clienthandler(u64 arg)
 				{
 					ssend(conn_s, "425 No data connection\r\n");
 				}
+				
+				dataactive = 0;
 			}
 			else
 			if(strcmp2(cmd, "STOR") == 0 || strcmp2(cmd, "APPE") == 0)
 			{
-				if(data_s > 0)
+				if(data_s > 0 || sconnect(inet_ntoa(p.remote_adr), 20, &data_s) == 0)
 				{
 					if(split == 1)
 					{
@@ -654,11 +660,13 @@ void opf_clienthandler(u64 arg)
 				{
 					ssend(conn_s, "425 No data connection\r\n");
 				}
+				
+				dataactive = 0;
 			}
 			else
 			if(strcmp2(cmd, "RETR") == 0)
 			{
-				if(data_s > 0)
+				if(data_s > 0 || sconnect(inet_ntoa(p.remote_adr), 20, &data_s) == 0)
 				{
 					if(split == 1)
 					{
@@ -694,11 +702,12 @@ void opf_clienthandler(u64 arg)
 				{
 					ssend(conn_s, "425 No data connection\r\n");
 				}
+				
+				dataactive = 0;
 			}
 			else
 			if(strcmp2(cmd, "TYPE") == 0)
 			{
-				dataactive = 1;
 				ssend(conn_s, "200 TYPE command successful\r\n");
 			}
 			else
@@ -735,7 +744,6 @@ void opf_clienthandler(u64 arg)
 					if(temprest >= 0)
 					{
 						rest = temprest;
-						dataactive = 1;
 						ssend(conn_s, "350 REST command successful\r\n");
 					}
 					else
@@ -952,13 +960,10 @@ void opf_clienthandler(u64 arg)
 				ssend(conn_s, "500 Unrecognized command\r\n");
 			}
 			
-			if(dataactive == 1)
-			{
-				dataactive = 0;
-			}
-			else
+			if(dataactive == 0)
 			{
 				sclose(&data_s);
+				dataactive = -1;
 			}
 		}
 		else
@@ -1017,7 +1022,10 @@ void opf_connectionhandler(u64 arg)
 	union net_ctl_info info;
 	
 	strcpy(statustext, "No Network Connection");
-	while(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0 && exitapp == 0);
+	while(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) < 0 && exitapp == 0)
+	{
+		usleep(100000);
+	}
 	
 	int list_s = slisten(LISTEN_PORT, 5);
 	
@@ -1072,7 +1080,11 @@ void opf_screensaver(u64 arg)
 				lv2GetCurrentTime(&sec_old, &nsec_old);
 			break;
 		}
+		
+		usleep(100000);
 	}
+	
+	sys_ppu_thread_exit(0);
 }
 
 int main()
@@ -1160,14 +1172,15 @@ int main()
 					print(50, 50, toptext, buffers[i]->ptr);
 					print(50, 90, statustext, buffers[i]->ptr);
 					
-					print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gmzGcI", buffers[i]->ptr);
+					print(50, 150, "Like this homebrew? Support the developer: http://bit.ly/gB8CJo", buffers[i]->ptr);
 					print(50, 190, "Follow @dashhacks on Twitter and win free stuff!", buffers[i]->ptr);
+					print(50, 230, "Visit my homebrew site: http://jjolano.ps3crunch.com", buffers[i]->ptr);
 					
-					print(50, 250, "Press SELECT + START to exit.", buffers[i]->ptr);
+					print(50, 280, "Press SELECT + START to exit.", buffers[i]->ptr);
 					
 					if(wf_mnt)
 					{
-						print(50, 300, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
+						print(50, 340, "Warning: writable dev_flash mount detected.", buffers[i]->ptr);
 					}
 				}
 			}
