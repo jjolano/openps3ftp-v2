@@ -1118,7 +1118,7 @@ int main()
 	
 	PadInfo padinfo;
 	PadData paddata;
-	int i;
+	int i, j, x;
 	
 	char toptext[128];
 	sprintf(toptext, "%s v%s by %s", TITLE, VERSION, AUTHOR);
@@ -1159,13 +1159,19 @@ int main()
 			}
 		}
 		
+		waitFlip();
+		
 		if(drawstate == 0)
 		{
-			s32 buffer_size = 4 * res.width * res.height;
-			
 			for(i = 0; i < 2; i++)
 			{
-				memset(buffers[i]->ptr, 0, buffer_size);
+				for(x = 0; x < res.height; x++)
+				{
+					for(j = 0; j < res.width; j++)
+					{
+						buffers[currentBuffer]->ptr[x * res.width + j] = FONT_COLOR_BLACK;
+					}
+				}
 				
 				if(ssactive != 1)
 				{
@@ -1188,7 +1194,6 @@ int main()
 			drawstate = -1;
 		}
 		
-		waitFlip();
 		flip(currentBuffer);
 		currentBuffer = !currentBuffer;
 	}
