@@ -1169,7 +1169,7 @@ int main()
 				{
 					for(j = 0; j < res.width; j++)
 					{
-						buffers[currentBuffer]->ptr[x * res.width + j] = FONT_COLOR_BLACK;
+						buffers[i]->ptr[x * res.width + j] = FONT_COLOR_BLACK;
 					}
 				}
 				
