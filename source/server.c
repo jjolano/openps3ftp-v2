@@ -62,7 +62,7 @@ void listener_thread(void *unused)
 	{
 		if((conn_s = accept(list_s, NULL, NULL)) > 0)
 		{
-			sysThreadCreate(&id, client_thread, (void *)conn_s, 1337, 0x4000, 0, "client");
+			sysThreadCreate(&id, client_thread, (void *)&conn_s, 1337, 0x4000, 0, "client");
 		}
 	}
 	

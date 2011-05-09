@@ -41,7 +41,7 @@
 
 void client_thread(void *conn_s_p)
 {
-	int conn_s = (int)conn_s_p;	// control connection socket
+	int conn_s = *(int *)conn_s_p;	// control connection socket
 	int data_s = -1;		// data connection socket
 	int pasv_s = -1;		// pasv listener socket
 	
