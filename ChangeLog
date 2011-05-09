@@ -1,4 +1,4 @@
-[Version 2.2 - May 2011]
+[Version 2.2 - May 10, 2011]
 - Added more compatibility for older FTP clients
 - Rewrote code for PSL1GHT v2
 - Changed UI to a simple message box (was lazy)
