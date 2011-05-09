@@ -1074,11 +1074,69 @@ void client_thread(void *conn_s_p)
 				{
 					bytes = ftpresp(temp, 501, "No file specified");
 				}
+				
+				send(conn_s, temp, bytes, 0);
 			}
 			else
 			if(strcmp2(cmd, "SITE") == 0)
 			{
+				if(itemp == 1)
+				{
+					char param2[2016];
+					itemp = strsplit(param, cmd, 15, param2, 2015);
+					
+					strtoupper(cmd);
+					
+					if(strcmp2(cmd, "CHMOD") == 0)
+					{
+						if(itemp == 1)
+						{
+							char perms[5], filename[2014];
+							itemp = strsplit(param2, perms + 1, 3, filename, 2013);
+							
+							if(itemp == 1)
+							{
+								perms[0] = '0';
+								
+								abspath(filename, cwd, temp);
+								
+								if(sysLv2FsChmod(temp, strtol(perms, NULL, 8)) == 0)
+								{
+									bytes = ftpresp(temp, 250, "Successfully set file permissions");
+								}
+								else
+								{
+									bytes = ftpresp(temp, 550, "Cannot set file permissions");
+								}
+							}
+							else
+							{
+								bytes = ftpresp(temp, 501, "Invalid CHMOD command syntax");
+							}
+						}
+						else
+						{
+							bytes = ftpresp(temp, 501, "Invalid CHMOD command syntax");
+						}
+					}
+					else
+					if(strcmp2(cmd, "EXITAPP") == 0)
+					{
+						appstate = 1;
+						
+						bytes = ftpresp(temp, 221, "Exiting...");
+					}
+					else
+					{
+						bytes = ftpresp(temp, 504, "Unrecognized SITE command");
+					}
+				}
+				else
+				{
+					bytes = ftpresp(temp, 501, "No SITE command specified");
+				}
 				
+				send(conn_s, temp, bytes, 0);
 			}
 			else
 			if(strcmp2(cmd, "SIZE") == 0)
