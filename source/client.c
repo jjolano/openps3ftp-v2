@@ -319,9 +319,11 @@ void client_thread(void *conn_s_p)
 						
 						data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 						
-						if(data_s == -1
-						|| connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+						if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 						{
+							closesocket(data_s);
+							data_s = -1;
+							
 							bytes = ftpresp(temp, 451, "Failed to create PORT socket");
 						}
 						else
@@ -373,7 +375,19 @@ void client_thread(void *conn_s_p)
 						else
 						{
 							// legacy
+							struct sockaddr_in sa;
+							socklen_t len = sizeof(sa);
 							
+							getpeername(conn_s, (struct sockaddr *)&sa, &len);
+							sa.sin_port = htons(20);
+							
+							data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+							
+							if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+							{
+								closesocket(data_s);
+								data_s = -1;
+							}
 						}
 					
 						if(data_s == -1)
@@ -464,7 +478,19 @@ void client_thread(void *conn_s_p)
 						else
 						{
 							// legacy
+							struct sockaddr_in sa;
+							socklen_t len = sizeof(sa);
 							
+							getpeername(conn_s, (struct sockaddr *)&sa, &len);
+							sa.sin_port = htons(20);
+							
+							data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+							
+							if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+							{
+								closesocket(data_s);
+								data_s = -1;
+							}
 						}
 						
 						if(data_s == -1)
@@ -635,7 +661,19 @@ void client_thread(void *conn_s_p)
 						else
 						{
 							// legacy
+							struct sockaddr_in sa;
+							socklen_t len = sizeof(sa);
 							
+							getpeername(conn_s, (struct sockaddr *)&sa, &len);
+							sa.sin_port = htons(20);
+							
+							data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+							
+							if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+							{
+								closesocket(data_s);
+								data_s = -1;
+							}
 						}
 						
 						if(data_s == -1)
@@ -704,7 +742,19 @@ void client_thread(void *conn_s_p)
 							else
 							{
 								// legacy
+								struct sockaddr_in sa;
+								socklen_t len = sizeof(sa);
 								
+								getpeername(conn_s, (struct sockaddr *)&sa, &len);
+								sa.sin_port = htons(20);
+								
+								data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+								
+								if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+								{
+									closesocket(data_s);
+									data_s = -1;
+								}
 							}
 							
 							if(data_s == -1)
@@ -795,7 +845,19 @@ void client_thread(void *conn_s_p)
 							else
 							{
 								// legacy
+								struct sockaddr_in sa;
+								socklen_t len = sizeof(sa);
 								
+								getpeername(conn_s, (struct sockaddr *)&sa, &len);
+								sa.sin_port = htons(20);
+								
+								data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+								
+								if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+								{
+									closesocket(data_s);
+									data_s = -1;
+								}
 							}
 							
 							if(data_s == -1)
@@ -883,7 +945,19 @@ void client_thread(void *conn_s_p)
 							else
 							{
 								// legacy
+								struct sockaddr_in sa;
+								socklen_t len = sizeof(sa);
 								
+								getpeername(conn_s, (struct sockaddr *)&sa, &len);
+								sa.sin_port = htons(20);
+								
+								data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+								
+								if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+								{
+									closesocket(data_s);
+									data_s = -1;
+								}
 							}
 							
 							if(data_s == -1)

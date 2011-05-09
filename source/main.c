@@ -92,6 +92,10 @@ int main()
 			sysLv2FsRead(fd, passwd, 63, &read);
 		}
 		
+		// prevent multiline passwords
+		strreplace(passwd, '\r', '\0');
+		strreplace(passwd, '\n', '\0');
+		
 		passwd[read] = '\0';
 		sysLv2FsClose(fd);
 		
