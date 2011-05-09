@@ -1,66 +1,23 @@
-=== OpenPS3FTP README v2.0 ===
+OpenPS3FTP is an open source ftp server for the PS3. It has an implementation of most
+ftp commands and also supports most ftp clients. It has some compliance to the ftp RFC.
 
-.: Default Login Details :.
-Username: root
-Password: openbox
+To compile the source, you will need the PSL1GHT homebrew SDK installed on your computer.
+Version 1 of the SDK is required to compile versions prior to v2.2, and version 2 of the
+SDK is required for v2.2 and later.
 
-A "nopass" version is included for those who prefer to use anonymous login.
+---
 
-.: Description :.
-OpenPS3FTP is a minimalistic open source File Transfer Protocol ("FTP") server 
-by jjolano for the PlayStation 3. It was written using the PSL1GHT SDK found at 
-http://psl1ght.com/ (git: http://github.com/HACKERCHANNEL/PSL1GHT).
+Source code git: http://git-hacks.com/openps3ftp
+License: GPL (version 3)
 
-.: License :.
-This software is licensed under the GNU General Public License v3. The source 
-code (along with source trees of previous versions) is available at the 
-OpenPS3FTP git repository:
-- Version 1.5 and prior: https://github.com/jjolano/openps3ftp
-- Version 2.0 and later: http://git-hacks.com/openps3ftp
+---
 
-.: General Usage Tutorial :.
-Just a small tutorial on the basics.
+Follow me on Twitter: @jjolano
+Visit my homebrew website: http://jjolano.dashhacks.com
+Support me: http://bit.ly/gmzGcI
 
-Prerequisites:
-- Custom Firmware (tested on 3.55, but should work for all)
-- A network connection
+Thanks for using this program!
 
-Installation:
-- Extract the pkg files from the archive and copy them into a USB drive
-- Connect the USB drive to your console and select the pkg file under the
-  "Install Package Files" menu (found under Game)
+If you are interested in winning a new console, follow @dashhacks on Twitter!
+Visit http://dashhacks.com for more details.
 
-    Note:
-    The pkg file that you select should correspond to the custom firmware you 
-    are using. For example: if you have installed geohot's 3.55 jailbreak, use 
-    the file "openps3ftp.geohot.pkg". If not, use "openps3ftp.pkg". Users of 
-    CFW 3.55 kmeaw can use any pkg.
-
-- OpenPS3FTP is now installed!
-
-Usage:
-- Launch OpenPS3FTP (found under Network)
-- Wait until you see text on the screen.
-- Connect to your console using an FTP client (such as FileZilla) with the IP 
-  address and port shown on the screen with user root and password openbox.
-- Now that you're connected, you can browse through and manipulate files on 
-  your console as if it were a folder on your computer.
-
-
-.: Developers :.
-Feel free to fork the OpenPS3FTP git repository. If you find anything in the 
-code that can be improved or needs to be fixed, you can edit that in your fork 
-and then submit your commit to me via pull request.
-
-If you are developing a program based on or using OpenPS3FTP's code, you must 
-include the source code of your program for each release because OpenPS3FTP is 
-licensed under the GPL.
-
-
-.: Support :.
-If you need help with this program or would like to point out a bug, please 
-contact me on Twitter (@jjolano) or submit an "Issue" on the OpenPS3FTP git.
-
-You can donate to me via PayPal: http://bit.ly/gmzGcI
-
-Thanks for using OpenPS3FTP!

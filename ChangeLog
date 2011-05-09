@@ -1,8 +1,9 @@
-[Version 2.2 - April 2011]
-- Fixed a minor hanging issue when starting OpenPS3FTP with no network connection
-- CPU usage decreased for screen saver
-- Fixed a minor threading issue with the screen saver
+[Version 2.2 - May 2011]
 - Added more compatibility for older FTP clients
+- Rewrote code for PSL1GHT v2
+- Changed UI to a simple message box (was lazy)
+- More RFC compliance
+- Improved overall connection handling
 
 [Version 2.1.1 - April 3, 2011]
 - More optimizations (improved response times)

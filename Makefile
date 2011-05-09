@@ -1,86 +1,151 @@
+#---------------------------------------------------------------------------------
+# Clear the implicit built in rules
+#---------------------------------------------------------------------------------
 .SUFFIXES:
+#---------------------------------------------------------------------------------
 ifeq ($(strip $(PSL1GHT)),)
-$(error "PSL1GHT must be set in the environment.")
+$(error "Please set PSL1GHT in your environment. export PSL1GHT=<path>")
 endif
 
-include $(PSL1GHT)/host/ppu.mk
+include $(PSL1GHT)/ppu_rules
 
+#---------------------------------------------------------------------------------
+# TARGET is the name of the output
+# BUILD is the directory where object files & intermediate files will be placed
+# SOURCES is a list of directories containing source code
+# INCLUDES is a list of directories containing extra header files
+#---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCE		:=	source
-INCLUDE		:=	include
+SOURCES		:=	source
 DATA		:=	data
-LIBS		:=	-lnet -lsysmodule -lgcm_sys -lreality -lsysutil -lnetctl -lsysfs -lio
+INCLUDES	:=	include
+
+#---------------------------------------------------------------------------------
+# pkg file stuff
+#---------------------------------------------------------------------------------
+
+ICON0		:=	$(CURDIR)/misc/ICON0.PNG
+SFOXML		:=	$(CURDIR)/misc/sfo.xml
+PKGFILES	:=	$(CURDIR)/release
 
 TITLE		:=	OpenPS3FTP
 APPID		:=	OFTP00001
-CONTENTID	:=	UP0001-$(APPID)_00-0000000000000000
-PKGFILES	:=	release
-SFOXML		:=	$(CURDIR)/sfo.xml
-ICON0		:=	$(CURDIR)/ICON0.PNG
+CONTENTID	:=	TOOL01-$(APPID)_00-E3D75E05E19B6152
 
-CFLAGS		+= -O2 -Wall -std=gnu99
-CXXFLAGS	+= -O2 -Wall
+#---------------------------------------------------------------------------------
+# options for code generation
+#---------------------------------------------------------------------------------
 
-ifneq ($(strip $(DISABLE_PASS)),)
-CFLAGS		+= -DDISABLE_PASS=$(DISABLE_PASS)
-CXXFLAGS	+= -DDISABLE_PASS=$(DISABLE_PASS)
-endif
+CFLAGS		=	-O2 -Wall -mcpu=cell $(MACHDEP) $(INCLUDE)
+CXXFLAGS	=	$(CFLAGS)
 
+LDFLAGS		=	$(MACHDEP) -Wl,-Map,$(notdir $@).map
+
+#---------------------------------------------------------------------------------
+# any extra libraries we wish to link with the project
+#---------------------------------------------------------------------------------
+LIBS	:=	-lrsx -lgcm_sys -lsysutil -lrt -llv2 -lnet -lnetctl -lsysmodule
+
+#---------------------------------------------------------------------------------
+# list of directories containing libraries, this must be the top level containing
+# include and lib
+#---------------------------------------------------------------------------------
+LIBDIRS	:=	
+
+#---------------------------------------------------------------------------------
+# no real need to edit anything past this point unless you need to add additional
+# rules for different file extensions
+#---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
-export VPATH	:=	$(foreach dir,$(SOURCE),$(CURDIR)/$(dir)) \
+
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
+
 export BUILDDIR	:=	$(CURDIR)/$(BUILD)
-export DEPSDIR	:=	$(BUILDDIR)
 
-CFILES		:= $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.c)))
-CXXFILES	:= $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:= $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.S)))
-BINFILES	:= $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
-VCGFILES	:= $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.vcg)))
+#---------------------------------------------------------------------------------
+# automatically build a list of object files for our project
+#---------------------------------------------------------------------------------
+CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 
-ifeq ($(strip $(CXXFILES)),)
-export LD	:=	$(CC)
+#---------------------------------------------------------------------------------
+# use CXX for linking C++ projects, CC for standard C
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(CPPFILES)),)
+	export LD	:=	$(CC)
 else
-export LD	:=	$(CXX)
+	export LD	:=	$(CXX)
 endif
 
-export OFILES	:=	$(CFILES:.c=.o) \
-					$(CXXFILES:.cpp=.o) \
-					$(SFILES:.S=.o) \
-					$(VCGFILES:.vcg=.vcg.o) \
-					$(BINFILES:.bin=.bin.o)
+export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
+					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
+					$(sFILES:.s=.o) $(SFILES:.S=.o)
 
-export BINFILES	:=	$(BINFILES:.bin=.bin.h)
-
-export INCLUDES	:=	$(foreach dir,$(INCLUDE),-I$(CURDIR)/$(dir)) \
+#---------------------------------------------------------------------------------
+# build a list of include paths
+#---------------------------------------------------------------------------------
+export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
+					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+					$(LIBPSL1GHT_INC) \
 					-I$(CURDIR)/$(BUILD)
 
-.PHONY: $(BUILD) clean pkg run
+#---------------------------------------------------------------------------------
+# build a list of library paths
+#---------------------------------------------------------------------------------
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+					$(LIBPSL1GHT_LIB)
 
+export OUTPUT	:=	$(CURDIR)/$(TARGET)
+.PHONY: $(BUILD) clean
+
+#---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
+#---------------------------------------------------------------------------------
 clean:
-	@echo "[RM]  $(notdir $(OUTPUT))"
-	@rm -rf $(BUILD) $(OUTPUT).elf $(OUTPUT).self $(OUTPUT).a $(OUTPUT)*.pkg
+	@echo clean ...
+	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).self $(OUTPUT)*.pkg
 
+#---------------------------------------------------------------------------------
 run: $(BUILD)
-	@$(PS3LOADAPP) $(OUTPUT).self
+	$(PS3LOADAPP) $(OUTPUT).self
 
+#---------------------------------------------------------------------------------
 pkg: $(BUILD) $(OUTPUT).pkg
 
+#---------------------------------------------------------------------------------
 else
 
-DEPENDS	:= $(OFILES:.o=.d)
+DEPENDS	:=	$(OFILES:.o=.d)
 
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
 $(OUTPUT).self: $(OUTPUT).elf
-$(OUTPUT).elf: $(OFILES)
-$(OFILES): $(BINFILES)
+$(OUTPUT).elf:	$(OFILES)
+
+#---------------------------------------------------------------------------------
+# This rule links in binary data with the .bin extension
+#---------------------------------------------------------------------------------
+%.bin.o	:	%.bin
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
 
 -include $(DEPENDS)
 
+#---------------------------------------------------------------------------------
 endif
+#---------------------------------------------------------------------------------
