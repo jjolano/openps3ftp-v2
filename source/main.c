@@ -87,7 +87,7 @@ int main()
 		s32 fd;
 		u64 read = 0;
 		
-		if(sysLv2FsOpen(OFTP_PASSWORD_FILE, SYS_O_RDONLY, &fd, 0, NULL, 0) == 0)
+		if(sysLv2FsOpen(OFTP_PASSWORD_FILE, SYS_O_RDONLY | SYS_O_CREAT, &fd, 0660, NULL, 0) == 0)
 		{
 			sysLv2FsRead(fd, passwd, 63, &read);
 		}

@@ -683,116 +683,270 @@ void client_thread(void *conn_s_p)
 			else
 			if(strcmp2(cmd, "STOR") == 0)
 			{
-				if(data_s == -1)
+				if(itemp == 1)
 				{
-					if(pasv_s > 0)
+					abspath(param, cwd, temp);
+					
+					s32 fd;
+					
+					if(sysLv2FsOpen(temp, SYS_O_WRONLY | SYS_O_CREAT, &fd, 0644, NULL, 0) == 0)
 					{
-						// passive
-						data_s = accept(pasv_s, NULL, NULL);
+						if(data_s == -1)
+						{
+							if(pasv_s > 0)
+							{
+								// passive
+								data_s = accept(pasv_s, NULL, NULL);
+								
+								closesocket(pasv_s);
+								pasv_s = -1;
+							}
+							else
+							{
+								// legacy
+								
+							}
+							
+							if(data_s == -1)
+							{
+								bytes = ftpresp(temp, 425, "No data connection");
+								send(conn_s, temp, bytes, 0);
+								
+								continue;
+							}
+							else
+							{
+								bytes = ftpresp(temp, 150, "Opening data connection");
+								send(conn_s, temp, bytes, 0);
+							}
+						}
+						else
+						{
+							bytes = ftpresp(temp, 125, "Accepted data connection");
+							send(conn_s, temp, bytes, 0);
+						}
 						
-						closesocket(pasv_s);
-						pasv_s = -1;
+						char *databuf = malloc(OFTP_DATA_BUFSIZE);
+						
+						if(databuf == NULL)
+						{
+							bytes = ftpresp(temp, 451, "Cannot allocate memory");
+						}
+						else
+						{
+							u64 pos, written, read;
+							
+							sysLv2FsFtruncate(fd, rest);
+							sysLv2FsLSeek64(fd, rest, SEEK_SET, &pos);
+							
+							while((read = (u64)recv(data_s, databuf, OFTP_DATA_BUFSIZE, MSG_WAITALL)) > 0)
+							{
+								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
+								{
+									bytes = ftpresp(temp, 451, "Block write error");
+									break;
+								}
+							}
+							
+							sysLv2FsFsync(fd);
+							free(databuf);
+							
+							bytes = ftpresp(temp, 226, "Transfer complete");
+						}
 					}
 					else
 					{
-						// legacy
-						
+						bytes = ftpresp(temp, 550, "Cannot access file");
 					}
 					
-					if(data_s == -1)
-					{
-						bytes = ftpresp(temp, 425, "No data connection");
-						send(conn_s, temp, bytes, 0);
-						
-						continue;
-					}
-					else
-					{
-						bytes = ftpresp(temp, 150, "Opening data connection");
-						send(conn_s, temp, bytes, 0);
-					}
+					sysLv2FsClose(fd);
 				}
 				else
 				{
-					bytes = ftpresp(temp, 125, "Accepted data connection");
-					send(conn_s, temp, bytes, 0);
+					bytes = ftpresp(temp, 501, "No file specified");
 				}
+				
+				send(conn_s, temp, bytes, 0);
+				
+				closesocket(data_s);
+				data_s = -1;
 			}
 			else
 			if(strcmp2(cmd, "APPE") == 0)
 			{
-				if(data_s == -1)
+				if(itemp == 1)
 				{
-					if(pasv_s > 0)
+					abspath(param, cwd, temp);
+					
+					s32 fd;
+					
+					if(sysLv2FsOpen(temp, SYS_O_WRONLY | SYS_O_CREAT | SYS_O_APPEND, &fd, 0644, NULL, 0) == 0)
 					{
-						// passive
-						data_s = accept(pasv_s, NULL, NULL);
+						if(data_s == -1)
+						{
+							if(pasv_s > 0)
+							{
+								// passive
+								data_s = accept(pasv_s, NULL, NULL);
+								
+								closesocket(pasv_s);
+								pasv_s = -1;
+							}
+							else
+							{
+								// legacy
+								
+							}
+							
+							if(data_s == -1)
+							{
+								bytes = ftpresp(temp, 425, "No data connection");
+								send(conn_s, temp, bytes, 0);
+								
+								continue;
+							}
+							else
+							{
+								bytes = ftpresp(temp, 150, "Opening data connection");
+								send(conn_s, temp, bytes, 0);
+							}
+						}
+						else
+						{
+							bytes = ftpresp(temp, 125, "Accepted data connection");
+							send(conn_s, temp, bytes, 0);
+						}
 						
-						closesocket(pasv_s);
-						pasv_s = -1;
+						char *databuf = malloc(OFTP_DATA_BUFSIZE);
+						
+						if(databuf == NULL)
+						{
+							bytes = ftpresp(temp, 451, "Cannot allocate memory");
+						}
+						else
+						{
+							u64 written, read;
+							
+							while((read = (u64)recv(data_s, databuf, OFTP_DATA_BUFSIZE, MSG_WAITALL)) > 0)
+							{
+								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
+								{
+									bytes = ftpresp(temp, 451, "Block write error");
+									break;
+								}
+							}
+							
+							sysLv2FsFsync(fd);
+							free(databuf);
+							
+							bytes = ftpresp(temp, 226, "Transfer complete");
+						}
 					}
 					else
 					{
-						// legacy
-						
+						bytes = ftpresp(temp, 550, "Cannot access file");
 					}
 					
-					if(data_s == -1)
-					{
-						bytes = ftpresp(temp, 425, "No data connection");
-						send(conn_s, temp, bytes, 0);
-						
-						continue;
-					}
-					else
-					{
-						bytes = ftpresp(temp, 150, "Opening data connection");
-						send(conn_s, temp, bytes, 0);
-					}
+					sysLv2FsClose(fd);
 				}
 				else
 				{
-					bytes = ftpresp(temp, 125, "Accepted data connection");
-					send(conn_s, temp, bytes, 0);
+					bytes = ftpresp(temp, 501, "No file specified");
 				}
+				
+				send(conn_s, temp, bytes, 0);
+				
+				closesocket(data_s);
+				data_s = -1;
 			}
 			else
 			if(strcmp2(cmd, "RETR") == 0)
 			{
-				if(data_s == -1)
+				if(itemp == 1)
 				{
-					if(pasv_s > 0)
+					abspath(param, cwd, temp);
+					
+					s32 fd;
+					
+					if(sysLv2FsOpen(temp, SYS_O_RDONLY, &fd, 0, NULL, 0) == 0)
 					{
-						// passive
-						data_s = accept(pasv_s, NULL, NULL);
+						if(data_s == -1)
+						{
+							if(pasv_s > 0)
+							{
+								// passive
+								data_s = accept(pasv_s, NULL, NULL);
+								
+								closesocket(pasv_s);
+								pasv_s = -1;
+							}
+							else
+							{
+								// legacy
+								
+							}
+							
+							if(data_s == -1)
+							{
+								bytes = ftpresp(temp, 425, "No data connection");
+								send(conn_s, temp, bytes, 0);
+								
+								continue;
+							}
+							else
+							{
+								bytes = ftpresp(temp, 150, "Opening data connection");
+								send(conn_s, temp, bytes, 0);
+							}
+						}
+						else
+						{
+							bytes = ftpresp(temp, 125, "Accepted data connection");
+							send(conn_s, temp, bytes, 0);
+						}
 						
-						closesocket(pasv_s);
-						pasv_s = -1;
+						char *databuf = malloc(OFTP_DATA_BUFSIZE);
+						
+						if(databuf == NULL)
+						{
+							bytes = ftpresp(temp, 451, "Cannot allocate memory");
+						}
+						else
+						{
+							u64 pos, read;
+							
+							sysLv2FsLSeek64(fd, rest, SEEK_SET, &pos);
+							
+							while(sysLv2FsRead(fd, databuf, OFTP_DATA_BUFSIZE, &read) == 0 && read > 0)
+							{
+								if(send(data_s, databuf, (size_t)read, 0) < (size_t)read)
+								{
+									bytes = ftpresp(temp, 451, "Block read/send error");
+									break;
+								}
+							}
+							
+							free(databuf);
+							
+							bytes = ftpresp(temp, 226, "Transfer complete");
+						}
 					}
 					else
 					{
-						// legacy
-						
+						bytes = ftpresp(temp, 550, "Cannot access file");
 					}
 					
-					if(data_s == -1)
-					{
-						bytes = ftpresp(temp, 425, "No data connection");
-						send(conn_s, temp, bytes, 0);
-						
-						continue;
-					}
-					else
-					{
-						bytes = ftpresp(temp, 150, "Opening data connection");
-						send(conn_s, temp, bytes, 0);
-					}
+					sysLv2FsClose(fd);
 				}
 				else
 				{
-					bytes = ftpresp(temp, 125, "Accepted data connection");
-					send(conn_s, temp, bytes, 0);
+					bytes = ftpresp(temp, 501, "No file specified");
 				}
+				
+				send(conn_s, temp, bytes, 0);
+				
+				closesocket(data_s);
+				data_s = -1;
 			}
 			else
 			if(strcmp2(cmd, "TYPE") == 0)

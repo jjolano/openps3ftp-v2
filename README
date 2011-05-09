@@ -5,6 +5,10 @@ To compile the source, you will need the PSL1GHT homebrew SDK installed on your 
 Version 1 of the SDK is required to compile versions prior to v2.2, and version 2 of the
 SDK is required for v2.2 and later.
 
+Default login details:
+- username: root
+- any password is accepted unless if the passwd file (containing the password) exists
+
 ---
 
 Source code git: http://git-hacks.com/openps3ftp
