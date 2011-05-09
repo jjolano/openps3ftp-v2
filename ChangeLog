@@ -4,6 +4,7 @@
 - Changed UI to a simple message box (was lazy)
 - More RFC compliance
 - Improved overall connection handling
+- Fixed a bunch of minor file transfer problems
 
 [Version 2.1.1 - April 3, 2011]
 - More optimizations (improved response times)

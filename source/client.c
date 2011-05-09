@@ -784,6 +784,7 @@ void client_thread(void *conn_s_p)
 						}
 						else
 						{
+							int err = 0;
 							u64 pos, written, read;
 							
 							sysLv2FsFtruncate(fd, rest);
@@ -793,7 +794,7 @@ void client_thread(void *conn_s_p)
 							{
 								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
 								{
-									bytes = ftpresp(temp, 451, "Block write error");
+									err = 1;
 									break;
 								}
 							}
@@ -801,7 +802,14 @@ void client_thread(void *conn_s_p)
 							sysLv2FsFsync(fd);
 							free(databuf);
 							
-							bytes = ftpresp(temp, 226, "Transfer complete");
+							if(err == 1)
+							{
+								bytes = ftpresp(temp, 451, "Block write error");
+							}
+							else
+							{
+								bytes = ftpresp(temp, 226, "Transfer complete");
+							}
 						}
 					}
 					else
@@ -887,13 +895,14 @@ void client_thread(void *conn_s_p)
 						}
 						else
 						{
+							int err = 0;
 							u64 written, read;
 							
 							while((read = (u64)recv(data_s, databuf, OFTP_DATA_BUFSIZE, MSG_WAITALL)) > 0)
 							{
 								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
 								{
-									bytes = ftpresp(temp, 451, "Block write error");
+									err = 1;
 									break;
 								}
 							}
@@ -901,7 +910,14 @@ void client_thread(void *conn_s_p)
 							sysLv2FsFsync(fd);
 							free(databuf);
 							
-							bytes = ftpresp(temp, 226, "Transfer complete");
+							if(err == 1)
+							{
+								bytes = ftpresp(temp, 451, "Block write error");
+							}
+							else
+							{
+								bytes = ftpresp(temp, 226, "Transfer complete");
+							}
 						}
 					}
 					else
@@ -987,6 +1003,7 @@ void client_thread(void *conn_s_p)
 						}
 						else
 						{
+							int err = 0;
 							u64 pos, read;
 							
 							sysLv2FsLSeek64(fd, rest, SEEK_SET, &pos);
@@ -995,14 +1012,21 @@ void client_thread(void *conn_s_p)
 							{
 								if(send(data_s, databuf, (size_t)read, 0) < (size_t)read)
 								{
-									bytes = ftpresp(temp, 451, "Block read/send error");
+									err = 1;
 									break;
 								}
 							}
 							
 							free(databuf);
 							
-							bytes = ftpresp(temp, 226, "Transfer complete");
+							if(err == 1)
+							{
+								bytes = ftpresp(temp, 451, "Block read/send error");
+							}
+							else
+							{
+								bytes = ftpresp(temp, 226, "Transfer complete");
+							}
 						}
 					}
 					else
