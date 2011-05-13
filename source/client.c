@@ -195,11 +195,11 @@ void client_thread(void *conn_s_p)
 			{
 				if(itemp == 1)
 				{
-					abspath(param, cwd, temp);
+					abspath(param, cwd, rnfr);
 					
-					if(sysLv2FsMkdir(temp, 0755) == 0)
+					if(sysLv2FsMkdir(rnfr, 0755) == 0)
 					{
-						bytes = sprintf(temp, "257 \"%s\" was successfully created\r\n", temp);
+						bytes = sprintf(temp, "257 \"%s\" was successfully created\r\n", rnfr);
 					}
 					else
 					{
