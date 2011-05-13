@@ -1,7 +1,7 @@
 #ifndef OPF_DEFINES_H
 #define OPF_DEFINES_H
 
-#define OFTP_VERSION		"v2.2"
+#define OFTP_VERSION		"v2.2.1"
 
 #define OFTP_PASSWORD_FILE	"/dev_hdd0/game/OFTP00001/USRDIR/passwd"
 

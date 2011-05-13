@@ -19,8 +19,6 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <malloc.h>
@@ -29,7 +27,6 @@
 
 #include <net/net.h>
 #include <net/netctl.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <sys/file.h>
@@ -136,7 +133,7 @@ void client_thread(void *conn_s_p)
 			char *feat[] =
 			{
 				"REST STREAM", "PASV", "PORT", "MDTM", "MLSD", "SIZE", "SITE CHMOD", "APPE",
-				"MLST type*;size*;modify*;UNIX.mode*;UNIX.uid*;UNIX.gid*;"
+				"MLST type*;size*;sizd*;modify*;UNIX.mode*;UNIX.uid*;UNIX.gid*;"
 			};
 			
 			int feat_count = sizeof(feat) / sizeof(char *);
@@ -158,6 +155,12 @@ void client_thread(void *conn_s_p)
 		if(strcmp2(cmd, "SYST") == 0)
 		{
 			bytes = ftpresp(temp, 215, "UNIX Type: L8");
+			send(conn_s, temp, bytes, 0);
+		}
+		else
+		if(strcmp2(cmd, "ACCT") == 0)
+		{
+			bytes = ftpresp(temp, 502, "Command not implemented");
 			send(conn_s, temp, bytes, 0);
 		}
 		else
@@ -264,10 +267,12 @@ void client_thread(void *conn_s_p)
 				
 				pasv_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 				
-				if(pasv_s == -1
-				|| bind(pasv_s, (struct sockaddr *)&sa, sizeof(sa)) == -1
+				if(bind(pasv_s, (struct sockaddr *)&sa, sizeof(sa)) == -1
 				|| listen(pasv_s, 1) == -1)
 				{
+					closesocket(pasv_s);
+					pasv_s = -1;
+					
 					bytes = ftpresp(temp, 451, "Failed to create PASV socket");
 				}
 				else
@@ -425,10 +430,10 @@ void client_thread(void *conn_s_p)
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
 						
-						char tstr[16];
-						strftime(tstr, 15, "%b %d %H:%M", localtime(&stat.st_mtime));
+						char tstr[14];
+						strftime(tstr, 13, "%b %e %H:%M", localtime(&stat.st_mtime));
 						
-						bytes = sprintf(temp, "%s%s%s%s%s%s%s%s%s%s   1 nobody   nobody       %llu %s %s\r\n",
+						bytes = sprintf(temp, "%s%s%s%s%s%s%s%s%s%s   1 nobody   nobody   %10llu %s %s\r\n",
 							fis_dir(stat) ? "d" : "-", 
 							((stat.st_mode & S_IRUSR) != 0) ? "r" : "-",
 							((stat.st_mode & S_IWUSR) != 0) ? "w" : "-",
@@ -1296,6 +1301,23 @@ void client_thread(void *conn_s_p)
 			if(strcmp2(cmd, "USER") == 0 || strcmp2(cmd, "PASS") == 0)
 			{
 				bytes = ftpresp(temp, 230, "You are already logged in");
+				send(conn_s, temp, bytes, 0);
+			}
+			else
+			if(strcmp2(cmd, "OPTS") == 0 || strcmp2(cmd, "HELP") == 0
+			|| strcmp2(cmd, "REIN") == 0 || strcmp2(cmd, "ADAT") == 0
+			|| strcmp2(cmd, "AUTH") == 0 || strcmp2(cmd, "CCC") == 0
+			|| strcmp2(cmd, "CONF") == 0 || strcmp2(cmd, "ENC") == 0
+			|| strcmp2(cmd, "EPRT") == 0 || strcmp2(cmd, "EPSV") == 0
+			|| strcmp2(cmd, "LANG") == 0 || strcmp2(cmd, "LPRT") == 0
+			|| strcmp2(cmd, "LPSV") == 0 || strcmp2(cmd, "MIC") == 0
+			|| strcmp2(cmd, "PBSZ") == 0 || strcmp2(cmd, "PROT") == 0
+			|| strcmp2(cmd, "SMNT") == 0 || strcmp2(cmd, "STOU") == 0
+			|| strcmp2(cmd, "XRCP") == 0 || strcmp2(cmd, "XSEN") == 0
+			|| strcmp2(cmd, "XSEM") == 0 || strcmp2(cmd, "XRSQ") == 0
+			|| strcmp2(cmd, "STAT") == 0)
+			{
+				bytes = ftpresp(temp, 502, "Command not implemented");
 				send(conn_s, temp, bytes, 0);
 			}
 			else

@@ -45,7 +45,7 @@ LDFLAGS		=	$(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lrsx -lgcm_sys -lsysutil -lrt -llv2 -lnet -lnetctl -lsysmodule
+LIBS	:=	-lrt -llv2 -lrsx -lgcm_sys -lsysutil -lnet -lnetctl -lsysmodule
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

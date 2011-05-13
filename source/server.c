@@ -19,16 +19,11 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <malloc.h>
 #include <ppu-types.h>
 
 #include <net/net.h>
 #include <net/netctl.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <sys/thread.h>
@@ -48,8 +43,7 @@ void listener_thread(void *unused)
 	
 	int list_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	
-	if(list_s == -1
-	|| bind(list_s, (struct sockaddr *)&sa, sizeof(sa)) == -1
+	if(bind(list_s, (struct sockaddr *)&sa, sizeof(sa)) == -1
 	|| listen(list_s, OFTP_LISTEN_BACKLOG) == -1)
 	{
 		appstate = 1;
@@ -67,6 +61,7 @@ void listener_thread(void *unused)
 	}
 	
 	closesocket(list_s);
+	
 	sysThreadExit(0);
 }
 

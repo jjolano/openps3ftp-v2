@@ -14,7 +14,7 @@ int exists(const char *path);
 int is_dir(const char *path);
 int strpos(const char *haystack, int needle);
 int strsplit(const char *str, char *left, int lmaxlen, char *right, int rmaxlen);
-void strreplace(char *str, char oldc, char newc);
+void strreplace(char *str, int oldc, int newc);
 void strtoupper(char *str);
 
 #endif /* OPF_FUNCTIONS_H */

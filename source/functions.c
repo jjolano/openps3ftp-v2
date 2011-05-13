@@ -19,11 +19,7 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <malloc.h>
 #include <fcntl.h>
 #include <ppu-types.h>
 
@@ -90,7 +86,7 @@ int strsplit(const char *str, char *left, int lmaxlen, char *right, int rmaxlen)
 	return 0;
 }
 
-void strreplace(char *str, char oldc, char newc)
+void strreplace(char *str, int oldc, int newc)
 {
 	char *pos;
 	while((pos = strchr(str, oldc)) != NULL)

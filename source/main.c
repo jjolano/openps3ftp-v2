@@ -19,10 +19,7 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <malloc.h>
 #include <ppu-types.h>
 
@@ -72,15 +69,18 @@ int main()
 	
 	sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sysutil_callback, NULL);
 	
+	void *host_addr = memalign(1024*1024, HOST_SIZE);
+	init_screen(host_addr, HOST_SIZE);
+	
+	setRenderTarget(curr_fb);
+	
 	union net_ctl_info info;
+	
 	if(netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info) == 0)
 	{
 		strcpy(ipaddr, info.ip_address);
 		
-		void *host_addr = memalign(1024*1024, HOST_SIZE);
-		init_screen(host_addr, HOST_SIZE);
-		
-		// start threads
+		// start server thread
 		sys_ppu_thread_t id;
 		sysThreadCreate(&id, listener_thread, NULL, 1500, 0x400, 0, "listener");
 		
@@ -92,36 +92,32 @@ int main()
 			sysLv2FsRead(fd, passwd, 63, &read);
 		}
 		
+		sysLv2FsClose(fd);
+		
 		// prevent multiline passwords
 		strreplace(passwd, '\r', '\0');
 		strreplace(passwd, '\n', '\0');
 		
 		passwd[read] = '\0';
-		sysLv2FsClose(fd);
-		
-		int ldf = (exists("/dev_blind") == 0
-			|| exists("/dev_rwflash") == 0
-			|| exists("/dev_fflash") == 0
-			|| exists("/dev_Alejandro") == 0
-			|| exists("/dev_dragon") == 0);
 		
 		char dlgmsg[256];
-		sprintf(dlgmsg, "OpenPS3FTP %s by jjolano (Twitter: @jjolano)\nWebsite: http://jjolano.dashhacks.com\nDonate: http://bit.ly/gmzGcI\nStatus: FTP Server Active (%s port 21)%s\n\nPress OK to exit this program.",
-			OFTP_VERSION, ipaddr, (ldf ? "\n- writable link to dev_flash detected" : ""));
+		sprintf(dlgmsg, "OpenPS3FTP %s by jjolano (Twitter: @jjolano)\nWebsite: http://jjolano.dashhacks.com\nDonations: http://bit.ly/gB8CJo\nStatus: FTP Server Active (%s port 21)\n\nPress OK to exit this program.",
+			OFTP_VERSION, ipaddr);
 		
-		setRenderTarget(curr_fb);
-		
-		// i got lazy - so what :P
 		msgDialogOpen2(mt_ok, dlgmsg, dialog_handler, NULL, NULL);
-		
-		while(appstate != 1)
-		{
-			sysUtilCheckCallback();
-			flip();
-		}
-		
-		msgDialogAbort();
 	}
+	else
+	{
+		msgDialogOpen2(mt_ok, OFTP_ERRMSG_NETWORK, dialog_handler, NULL, NULL);
+	}
+	
+	while(appstate != 1)
+	{
+		sysUtilCheckCallback();
+		flip();
+	}
+		
+	msgDialogAbort();
 	
 	netDeinitialize();
 	
