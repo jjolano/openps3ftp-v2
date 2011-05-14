@@ -123,6 +123,7 @@ int main()
 	
 	gcmSetWaitFlip(context);
 	rsxFinish(context, 1);
+	free(host_addr);
 	return 0;
 }
 

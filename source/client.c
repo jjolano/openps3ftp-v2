@@ -273,15 +273,6 @@ void client_thread(void *conn_s_p)
 				}
 				else
 				{
-					/*
-					char pasv_ipaddr[16];
-					strcpy(pasv_ipaddr, ipaddr);
-					
-					strreplace(pasv_ipaddr, '.', ',');
-					
-					bytes = sprintf(temp, "227 Entering Passive Mode (%s,%i,%i)\r\n", pasv_ipaddr, p1, p2);
-					*/
-					
 					getsockname(pasv_s, (struct sockaddr *)&sa, &len);
 					
 					bytes = sprintf(temp, "227 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n",
@@ -306,29 +297,23 @@ void client_thread(void *conn_s_p)
 					data_s = -1;
 					pasv_s = -1;
 					
-					rest = 0;
+					short unsigned int a[4], p[2];
+					int i;
 					
-					char data[6][4];
-					char *st = strtok(param, ",");
-					
-					int i = 0;
-					while(st != NULL && i < 6)
-					{
-						strcpy(data[i++], st);
-						st = strtok(NULL, ",");
-					}
+					i = sscanf(param, "%3hu,%3hu,%3hu,%3hu,%3hu,%3hu", &a[0], &a[1], &a[2], &a[3], &p[0], &p[1]);
 					
 					if(i >= 6)
 					{
-						char port_ipaddr[16];
-						sprintf(port_ipaddr, "%s.%s.%s.%s", data[0], data[1], data[2], data[3]);
-						
 						struct sockaddr_in sa;
 						memset(&sa, 0, sizeof(sa));
 						
 						sa.sin_family = AF_INET;
-						sa.sin_port = htons(ftp_port(atoi(data[4]), atoi(data[5])));
-						sa.sin_addr.s_addr = inet_addr(port_ipaddr);
+						sa.sin_port = htons(ftp_port(p[0], p[1]));
+						sa.sin_addr.s_addr = htonl(
+							((unsigned char)(a[0]) << 24) +
+							((unsigned char)(a[1]) << 16) +
+							((unsigned char)(a[2]) <<  8) +
+							((unsigned char)(a[3])));
 						
 						data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 						
@@ -341,6 +326,8 @@ void client_thread(void *conn_s_p)
 						}
 						else
 						{
+							rest = 0;
+							
 							bytes = ftpresp(temp, 200, "PORT command successful");
 						}
 					}
