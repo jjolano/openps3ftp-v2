@@ -59,7 +59,10 @@ static void dialog_handler(msgButton button, void *usrdata)
 
 void sysutil_callback(u64 status, u64 param, void *usrdata)
 {
-	appstate = (status == SYSUTIL_EXIT_GAME);
+	if(status == SYSUTIL_EXIT_GAME)
+	{
+		appstate = 1;
+	}
 }
 
 int main()
