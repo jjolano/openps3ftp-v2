@@ -57,11 +57,6 @@ void client_thread(void *conn_s_p)
 	char user[16];
 	char rnfr[2032];
 	
-	// "random" port number generator for passive mode
-	srand(conn_s);
-	int p1 = (rand() % 251) + 4;
-	int p2 = rand() % 256;
-	
 	bytes = sprintf(temp, "220 OpenPS3FTP %s by jjolano\r\n", OFTP_VERSION);
 	send(conn_s, temp, bytes, 0);
 	
@@ -160,7 +155,7 @@ void client_thread(void *conn_s_p)
 		else
 		if(strcmp2(cmd, "ACCT") == 0)
 		{
-			bytes = ftpresp(temp, 502, "Command not implemented");
+			bytes = ftpresp(temp, 202, "ACCT command ignored");
 			send(conn_s, temp, bytes, 0);
 		}
 		else
@@ -259,11 +254,12 @@ void client_thread(void *conn_s_p)
 				rest = 0;
 				
 				struct sockaddr_in sa;
-				memset(&sa, 0, sizeof(sa));
+				socklen_t len = sizeof(sa);
 				
-				sa.sin_family = AF_INET;
-				sa.sin_port = htons(ftp_port(p1, p2));
-				sa.sin_addr.s_addr = htonl(INADDR_ANY);
+				getsockname(conn_s, (struct sockaddr *)&sa, &len);
+				
+				// let the console choose port
+				sa.sin_port = 0;
 				
 				pasv_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 				
@@ -277,12 +273,24 @@ void client_thread(void *conn_s_p)
 				}
 				else
 				{
+					/*
 					char pasv_ipaddr[16];
 					strcpy(pasv_ipaddr, ipaddr);
 					
 					strreplace(pasv_ipaddr, '.', ',');
 					
 					bytes = sprintf(temp, "227 Entering Passive Mode (%s,%i,%i)\r\n", pasv_ipaddr, p1, p2);
+					*/
+					
+					getsockname(pasv_s, (struct sockaddr *)&sa, &len);
+					
+					bytes = sprintf(temp, "227 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n",
+						(htonl(sa.sin_addr.s_addr) & 0xff000000) >> 24,
+						(htonl(sa.sin_addr.s_addr) & 0x00ff0000) >> 16,
+						(htonl(sa.sin_addr.s_addr) & 0x0000ff00) >>  8,
+						(htonl(sa.sin_addr.s_addr) & 0x000000ff),
+						(htons(sa.sin_port) & 0xff00) >> 8,
+						(htons(sa.sin_port) & 0x00ff));
 				}
 				
 				send(conn_s, temp, bytes, 0);
