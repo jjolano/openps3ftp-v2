@@ -36,6 +36,9 @@
 #include "client.h"
 #include "functions.h"
 
+int cqueue = 0;
+int dqueue = 0;
+
 void client_thread(void *conn_s_p)
 {
 	int conn_s = *(int *)conn_s_p;	// control connection socket
@@ -45,45 +48,46 @@ void client_thread(void *conn_s_p)
 	int authorized = 0;		// 1 if successfully logged in
 	long long rest = 0;		// for resuming transfers
 	
-	char temp[2048];		// temporary storage of strings
+	char temp[512];			// temporary storage of strings
 	char expectcmd[16];		// for commands like RNFR, USER, etc.
-	char cwd[2048] = "/\0";		// current working directory
+	char cwd[256];			// current working directory
 	
 	size_t bytes;
 	int itemp;
 	
 	char cmd[16];
-	char param[2032];
+	char param[496];
 	char user[16];
-	char rnfr[2032];
+	char rnfr[256];
 	
 	bytes = sprintf(temp, "220 OpenPS3FTP %s by jjolano\r\n", OFTP_VERSION);
 	send(conn_s, temp, bytes, 0);
 	
-	while(appstate != 1 && (bytes = recv(conn_s, temp, 2047, 0)) > 0)
+	while(appstate != 1 && (bytes = recv(conn_s, temp, 511, 0)) > 0)
 	{
-		itemp = strpos(temp, '\r');
-		
-		/*
-		char *p = strchr(temp, '\r');
-		*p = '\0';
-		p = strchr(temp, '\n');
-		*p = '\0';
-		*/
-		
 		// check if client sent a valid message
-		if(itemp > -1)
+		char *p = strstr(temp, "\r\n");
+		
+		if(p != NULL)
 		{
-			temp[itemp] = '\0';
-			temp[itemp + 1] = '\0';
+			strcpy(p, "\0\0");
 		}
 		else
 		{
 			break;
 		}
 		
+		// experimental queue system
+		// to try and prevent some io crashes
+		itemp = cqueue;
+		cqueue++;
+		
+		while((cqueue - 1) > itemp);
+		
+		cqueue--;
+		
 		// get command and parameter
-		itemp = strsplit(temp, cmd, 15, param, 2031);
+		itemp = strsplit(temp, cmd, 15, param, 495);
 		
 		strtoupper(cmd);
 		
@@ -251,8 +255,6 @@ void client_thread(void *conn_s_p)
 				
 				data_s = -1;
 				
-				rest = 0;
-				
 				struct sockaddr_in sa;
 				socklen_t len = sizeof(sa);
 				
@@ -273,6 +275,8 @@ void client_thread(void *conn_s_p)
 				}
 				else
 				{
+					rest = 0;
+					
 					getsockname(pasv_s, (struct sockaddr *)&sa, &len);
 					
 					bytes = sprintf(temp, "227 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n",
@@ -302,7 +306,7 @@ void client_thread(void *conn_s_p)
 					
 					i = sscanf(param, "%3hu,%3hu,%3hu,%3hu,%3hu,%3hu", &a[0], &a[1], &a[2], &a[3], &p[0], &p[1]);
 					
-					if(i >= 6)
+					if(i == 6)
 					{
 						struct sockaddr_in sa;
 						memset(&sa, 0, sizeof(sa));
@@ -360,6 +364,15 @@ void client_thread(void *conn_s_p)
 			{
 				s32 fd;
 				
+				// experimental queue system
+				// to try and prevent some io crashes
+				itemp = dqueue;
+				dqueue++;
+				
+				while((dqueue - 1) > itemp);
+				
+				dqueue--;
+				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
 					if(data_s == -1)
@@ -421,6 +434,15 @@ void client_thread(void *conn_s_p)
 						{
 							continue;
 						}
+						
+						// experimental queue system
+						// to try and prevent some io crashes
+						itemp = dqueue;
+						dqueue++;
+						
+						while((dqueue - 1) > itemp);
+						
+						dqueue--;
 						
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
@@ -463,6 +485,15 @@ void client_thread(void *conn_s_p)
 			{
 				s32 fd;
 				
+				// experimental queue system
+				// to try and prevent some io crashes
+				itemp = dqueue;
+				dqueue++;
+				
+				while((dqueue - 1) > itemp);
+				
+				dqueue--;
+				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
 					if(data_s == -1)
@@ -524,6 +555,15 @@ void client_thread(void *conn_s_p)
 						{
 							continue;
 						}
+						
+						// experimental queue system
+						// to try and prevent some io crashes
+						itemp = dqueue;
+						dqueue++;
+						
+						while((dqueue - 1) > itemp);
+						
+						dqueue--;
 						
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
@@ -578,6 +618,15 @@ void client_thread(void *conn_s_p)
 			{
 				s32 fd;
 				
+				// experimental queue system
+				// to try and prevent some io crashes
+				itemp = dqueue;
+				dqueue++;
+				
+				while((dqueue - 1) > itemp);
+				
+				dqueue--;
+				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
 					bytes = sprintf(temp, "250-Directory Listing:\r\n");
@@ -595,6 +644,15 @@ void client_thread(void *conn_s_p)
 						{
 							continue;
 						}
+						
+						// experimental queue system
+						// to try and prevent some io crashes
+						itemp = dqueue;
+						dqueue++;
+						
+						while((dqueue - 1) > itemp);
+						
+						dqueue--;
 						
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
@@ -645,6 +703,15 @@ void client_thread(void *conn_s_p)
 			if(strcmp2(cmd, "NLST") == 0)
 			{
 				s32 fd;
+				
+				// experimental queue system
+				// to try and prevent some io crashes
+				itemp = dqueue;
+				dqueue++;
+				
+				while((dqueue - 1) > itemp);
+				
+				dqueue--;
 				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
@@ -719,7 +786,7 @@ void client_thread(void *conn_s_p)
 				data_s = -1;
 			}
 			else
-			if(strcmp2(cmd, "STOR") == 0)
+			if(strcmp2(cmd, "STOR") == 0 || strcmp2(cmd, "APPE") == 0)
 			{
 				if(itemp == 1)
 				{
@@ -727,7 +794,16 @@ void client_thread(void *conn_s_p)
 					
 					s32 fd;
 					
-					if(sysLv2FsOpen(temp, SYS_O_WRONLY | SYS_O_CREAT, &fd, 0644, NULL, 0) == 0)
+					// experimental queue system
+					// to try and prevent some io crashes
+					itemp = dqueue;
+					dqueue++;
+					
+					while((dqueue - 1) > itemp);
+					
+					dqueue--;
+					
+					if(sysLv2FsOpen(temp, SYS_O_WRONLY | SYS_O_CREAT | (strcmp2(cmd, "APPE") == 0 ? SYS_O_APPEND : 0), &fd, 0644, NULL, 0) == 0)
 					{
 						if(data_s == -1)
 						{
@@ -787,11 +863,23 @@ void client_thread(void *conn_s_p)
 							int err = 0;
 							u64 pos, written, read;
 							
-							sysLv2FsFtruncate(fd, rest);
-							sysLv2FsLSeek64(fd, rest, SEEK_SET, &pos);
+							if(strcmp2(cmd, "STOR") == 0)
+							{
+								sysLv2FsFtruncate(fd, rest);
+								sysLv2FsLSeek64(fd, rest, SEEK_SET, &pos);
+							}
 							
 							while((read = (u64)recv(data_s, databuf, OFTP_DATA_BUFSIZE, MSG_WAITALL)) > 0)
 							{
+								// experimental queue system
+								// to try and prevent some io crashes
+								itemp = dqueue;
+								dqueue++;
+								
+								while((dqueue - 1) > itemp);
+								
+								dqueue--;
+								
 								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
 								{
 									err = 1;
@@ -799,115 +887,7 @@ void client_thread(void *conn_s_p)
 								}
 							}
 							
-							sysLv2FsFsync(fd);
-							free(databuf);
-							
-							if(err == 1)
-							{
-								bytes = ftpresp(temp, 451, "Block write error");
-							}
-							else
-							{
-								bytes = ftpresp(temp, 226, "Transfer complete");
-							}
-						}
-					}
-					else
-					{
-						bytes = ftpresp(temp, 550, "Cannot access file");
-					}
-					
-					sysLv2FsClose(fd);
-				}
-				else
-				{
-					bytes = ftpresp(temp, 501, "No file specified");
-				}
-				
-				send(conn_s, temp, bytes, 0);
-				
-				closesocket(data_s);
-				data_s = -1;
-			}
-			else
-			if(strcmp2(cmd, "APPE") == 0)
-			{
-				if(itemp == 1)
-				{
-					abspath(param, cwd, temp);
-					
-					s32 fd;
-					
-					if(sysLv2FsOpen(temp, SYS_O_WRONLY | SYS_O_CREAT | SYS_O_APPEND, &fd, 0644, NULL, 0) == 0)
-					{
-						if(data_s == -1)
-						{
-							if(pasv_s > 0)
-							{
-								// passive
-								data_s = accept(pasv_s, NULL, NULL);
-								
-								closesocket(pasv_s);
-								pasv_s = -1;
-							}
-							else
-							{
-								// legacy
-								struct sockaddr_in sa;
-								socklen_t len = sizeof(sa);
-								
-								getpeername(conn_s, (struct sockaddr *)&sa, &len);
-								sa.sin_port = htons(20);
-								
-								data_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-								
-								if(connect(data_s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
-								{
-									closesocket(data_s);
-									data_s = -1;
-								}
-							}
-							
-							if(data_s == -1)
-							{
-								bytes = ftpresp(temp, 425, "No data connection");
-								send(conn_s, temp, bytes, 0);
-								
-								continue;
-							}
-							else
-							{
-								bytes = ftpresp(temp, 150, "Opening data connection");
-								send(conn_s, temp, bytes, 0);
-							}
-						}
-						else
-						{
-							bytes = ftpresp(temp, 125, "Accepted data connection");
-							send(conn_s, temp, bytes, 0);
-						}
-						
-						char *databuf = malloc(OFTP_DATA_BUFSIZE);
-						
-						if(databuf == NULL)
-						{
-							bytes = ftpresp(temp, 451, "Cannot allocate memory");
-						}
-						else
-						{
-							int err = 0;
-							u64 written, read;
-							
-							while((read = (u64)recv(data_s, databuf, OFTP_DATA_BUFSIZE, MSG_WAITALL)) > 0)
-							{
-								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
-								{
-									err = 1;
-									break;
-								}
-							}
-							
-							sysLv2FsFsync(fd);
+							//sysLv2FsFsync(fd);
 							free(databuf);
 							
 							if(err == 1)
@@ -945,6 +925,15 @@ void client_thread(void *conn_s_p)
 					abspath(param, cwd, temp);
 					
 					s32 fd;
+					
+					// experimental queue system
+					// to try and prevent some io crashes
+					itemp = dqueue;
+					dqueue++;
+					
+					while((dqueue - 1) > itemp);
+					
+					dqueue--;
 					
 					if(sysLv2FsOpen(temp, SYS_O_RDONLY, &fd, 0, NULL, 0) == 0)
 					{
@@ -1010,7 +999,16 @@ void client_thread(void *conn_s_p)
 							
 							while(sysLv2FsRead(fd, databuf, OFTP_DATA_BUFSIZE, &read) == 0 && read > 0)
 							{
-								if(send(data_s, databuf, (size_t)read, 0) < (size_t)read)
+								// experimental queue system
+								// to try and prevent some io crashes
+								itemp = dqueue;
+								dqueue++;
+								
+								while((dqueue - 1) > itemp);
+								
+								dqueue--;
+								
+								if((u64)send(data_s, databuf, (size_t)read, 0) < read)
 								{
 									err = 1;
 									break;
@@ -1180,8 +1178,8 @@ void client_thread(void *conn_s_p)
 			{
 				if(itemp == 1)
 				{
-					char param2[2016];
-					itemp = strsplit(param, cmd, 15, param2, 2015);
+					char param2[480];
+					itemp = strsplit(param, cmd, 15, param2, 479);
 					
 					strtoupper(cmd);
 					
@@ -1189,8 +1187,8 @@ void client_thread(void *conn_s_p)
 					{
 						if(itemp == 1)
 						{
-							char perms[5], filename[2014];
-							itemp = strsplit(param2, perms + 1, 3, filename, 2013);
+							char perms[5], filename[256];
+							itemp = strsplit(param2, perms + 1, 3, filename, 256);
 							
 							if(itemp == 1)
 							{
@@ -1348,6 +1346,7 @@ void client_thread(void *conn_s_p)
 					if(strcmp2(user, OFTP_LOGIN_USERNAME) == 0 && (is_empty(passwd) || strcmp2(param, passwd) == 0))
 					{
 						authorized = 1;
+						strcpy(cwd, "/");
 						
 						bytes = ftpresp(temp, 230, "Successfully logged in");
 					}

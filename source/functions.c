@@ -56,7 +56,7 @@ int exists(const char *path)
 int is_dir(const char *path)
 {
 	sysFSStat stat;
-	return (sysLv2FsStat(path, &stat) == 0) ? fis_dir(stat) : 0;
+	return (sysLv2FsStat(path, &stat) == 0 && fis_dir(stat));
 }
 
 int strpos(const char *haystack, int needle)

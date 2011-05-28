@@ -13,8 +13,7 @@ $MAKE clean pkg > /dev/null
 
 echo "zipping ... $ZIPFILE"
 mkdir -p "$OUTDIR"
-touch README COPYING ChangeLog *.pkg
-zip -q -l "$ZIPFILE" README COPYING ChangeLog *.pkg
+zip -qul9 "$ZIPFILE" -n pkg README COPYING ChangeLog *.pkg
 
 $MAKE clean > /dev/null
 

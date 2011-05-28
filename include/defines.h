@@ -1,7 +1,7 @@
 #ifndef OPF_DEFINES_H
 #define OPF_DEFINES_H
 
-#define OFTP_VERSION		"v2.2.1"
+#define OFTP_VERSION		"v2.3"
 
 #define OFTP_PASSWORD_FILE	"/dev_hdd0/game/OFTP00001/USRDIR/passwd"
 
@@ -21,7 +21,6 @@
 // PSL1GHT v2's net/socket.h doesn't seem to have this, but sprx/libnet/socket.c does
 int closesocket(int socket);
 
-extern char ipaddr[16];
 extern char passwd[64];
 extern int appstate;
 

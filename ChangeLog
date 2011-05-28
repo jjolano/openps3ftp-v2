@@ -1,9 +1,11 @@
-[Version 2.2.1 - May 2011]
+[Version 2.3 - May 29, 2011]
 - Fixed some minor issues in the client code
 - Socket handling improvements
 - Fixed an epic fail in the client code
 - Perfected the UNIX-style LIST output
 - Improved passive mode function
+- Added an experimental queue system to prevent some io crashes
+- Stability improvements
 
 [Version 2.2 - May 10, 2011]
 - Added more compatibility for older FTP clients
