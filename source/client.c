@@ -84,8 +84,6 @@ void client_thread(void *conn_s_p)
 		
 		while((cqueue - 1) > itemp);
 		
-		cqueue--;
-		
 		// get command and parameter
 		itemp = strsplit(temp, cmd, 15, param, 495);
 		
@@ -364,15 +362,6 @@ void client_thread(void *conn_s_p)
 			{
 				s32 fd;
 				
-				// experimental queue system
-				// to try and prevent some io crashes
-				itemp = dqueue;
-				dqueue++;
-				
-				while((dqueue - 1) > itemp);
-				
-				dqueue--;
-				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
 					if(data_s == -1)
@@ -441,8 +430,6 @@ void client_thread(void *conn_s_p)
 						dqueue++;
 						
 						while((dqueue - 1) > itemp);
-						
-						dqueue--;
 						
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
@@ -464,6 +451,8 @@ void client_thread(void *conn_s_p)
 							(unsigned long long)stat.st_size, tstr, entry.d_name);
 						
 						send(data_s, temp, bytes, 0);
+						
+						dqueue--;
 					}
 					
 					bytes = ftpresp(temp, 226, "Transfer complete");
@@ -484,15 +473,6 @@ void client_thread(void *conn_s_p)
 			if(strcmp2(cmd, "MLSD") == 0)
 			{
 				s32 fd;
-				
-				// experimental queue system
-				// to try and prevent some io crashes
-				itemp = dqueue;
-				dqueue++;
-				
-				while((dqueue - 1) > itemp);
-				
-				dqueue--;
 				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
@@ -562,8 +542,6 @@ void client_thread(void *conn_s_p)
 						dqueue++;
 						
 						while((dqueue - 1) > itemp);
-						
-						dqueue--;
 						
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
@@ -597,6 +575,8 @@ void client_thread(void *conn_s_p)
 							entry.d_name);
 						
 						send(data_s, temp, bytes, 0);
+						
+						dqueue--;
 					}
 					
 					bytes = ftpresp(temp, 226, "Transfer complete");
@@ -617,15 +597,6 @@ void client_thread(void *conn_s_p)
 			if(strcmp2(cmd, "MLST") == 0)
 			{
 				s32 fd;
-				
-				// experimental queue system
-				// to try and prevent some io crashes
-				itemp = dqueue;
-				dqueue++;
-				
-				while((dqueue - 1) > itemp);
-				
-				dqueue--;
 				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
@@ -651,8 +622,6 @@ void client_thread(void *conn_s_p)
 						dqueue++;
 						
 						while((dqueue - 1) > itemp);
-						
-						dqueue--;
 						
 						abspath(entry.d_name, cwd, temp);
 						sysLv2FsStat(temp, &stat);
@@ -686,6 +655,8 @@ void client_thread(void *conn_s_p)
 							entry.d_name);
 						
 						send(conn_s, temp, bytes, 0);
+						
+						dqueue--;
 					}
 					
 					bytes = ftpresp(temp, 250, "End");
@@ -703,15 +674,6 @@ void client_thread(void *conn_s_p)
 			if(strcmp2(cmd, "NLST") == 0)
 			{
 				s32 fd;
-				
-				// experimental queue system
-				// to try and prevent some io crashes
-				itemp = dqueue;
-				dqueue++;
-				
-				while((dqueue - 1) > itemp);
-				
-				dqueue--;
 				
 				if(sysLv2FsOpenDir(cwd, &fd) == 0)
 				{
@@ -794,15 +756,6 @@ void client_thread(void *conn_s_p)
 					
 					s32 fd;
 					
-					// experimental queue system
-					// to try and prevent some io crashes
-					itemp = dqueue;
-					dqueue++;
-					
-					while((dqueue - 1) > itemp);
-					
-					dqueue--;
-					
 					if(sysLv2FsOpen(temp, SYS_O_WRONLY | SYS_O_CREAT | (strcmp2(cmd, "APPE") == 0 ? SYS_O_APPEND : 0), &fd, 0644, NULL, 0) == 0)
 					{
 						if(data_s == -1)
@@ -878,13 +831,14 @@ void client_thread(void *conn_s_p)
 								
 								while((dqueue - 1) > itemp);
 								
-								dqueue--;
-								
 								if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
 								{
 									err = 1;
+									dqueue--;
 									break;
 								}
+								
+								dqueue--;
 							}
 							
 							//sysLv2FsFsync(fd);
@@ -925,15 +879,6 @@ void client_thread(void *conn_s_p)
 					abspath(param, cwd, temp);
 					
 					s32 fd;
-					
-					// experimental queue system
-					// to try and prevent some io crashes
-					itemp = dqueue;
-					dqueue++;
-					
-					while((dqueue - 1) > itemp);
-					
-					dqueue--;
 					
 					if(sysLv2FsOpen(temp, SYS_O_RDONLY, &fd, 0, NULL, 0) == 0)
 					{
@@ -1006,13 +951,14 @@ void client_thread(void *conn_s_p)
 								
 								while((dqueue - 1) > itemp);
 								
-								dqueue--;
-								
 								if((u64)send(data_s, databuf, (size_t)read, 0) < read)
 								{
 									err = 1;
+									dqueue--;
 									break;
 								}
+								
+								dqueue--;
 							}
 							
 							free(databuf);
@@ -1369,6 +1315,8 @@ void client_thread(void *conn_s_p)
 				send(conn_s, temp, bytes, 0);
 			}
 		}
+		
+		cqueue--;
 	}
 	
 	closesocket(conn_s);
