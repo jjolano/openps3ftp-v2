@@ -1,3 +1,10 @@
+[Version 3.0 - 2011]
+- Complete rewrite of most functions
+- New SITE command: FLASH (dev_blind)
+- Fixed commands STRU, and MODE.
+- STAT command now returns the program's version
+- new git: http://git.dashhacks.com/openps3ftp
+
 [Version 2.3 - May 29, 2011]
 - Fixed some minor issues in the client code
 - Socket handling improvements
