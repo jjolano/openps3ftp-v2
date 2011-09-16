@@ -1213,9 +1213,6 @@ void listen_thread(void *list_s_p)
 
 int main()
 {
-	// register the exit callback
-	sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sysutil_callback, NULL);
-	
 	netInitialize();
 	netCtlInit();
 	
@@ -1260,6 +1257,15 @@ int main()
 		// create a thread for the accept loop
 		sys_ppu_thread_t id;
 		sysThreadCreate(&id, listen_thread, (void *)&list_s, 1001, 0x100, 0, "listener");
+		
+		// register the exit callback
+		sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sysutil_callback, NULL);
+		
+		while(running)
+		{
+			sysUtilCheckCallback();
+			usleep(200);
+		}
 	}
 	else
 	{
