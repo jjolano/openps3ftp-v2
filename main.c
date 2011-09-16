@@ -50,6 +50,9 @@ char passwd[64];
 // Used to tell if the user is exiting the program.
 int running = 1;
 
+// for file transfer io balancing
+int ioqueue = 0;
+
 void sysutil_callback(u64 status, u64 param, void *usrdata)
 {
 	// Check if the user is exiting the program
@@ -896,10 +899,19 @@ void client_thread(void *conn_s_p)
 						
 						while(!err && (read = (u64)recv(data_s, databuf, OFTP_DATA_BUFSIZE, MSG_WAITALL)) > 0)
 						{
+							while(ioqueue > 0)
+							{
+								usleep(200);
+							}
+							
+							ioqueue++;
+							
 							if(sysLv2FsWrite(fd, databuf, read, &written) != 0 || written < read)
 							{
 								err = 1;
 							}
+							
+							ioqueue--;
 						}
 						
 						free(databuf);
@@ -971,10 +983,19 @@ void client_thread(void *conn_s_p)
 						
 						while(!err && sysLv2FsRead(fd, databuf, OFTP_DATA_BUFSIZE, &read) == 0 && read > 0)
 						{
+							while(ioqueue > 0)
+							{
+								usleep(200);
+							}
+							
+							ioqueue++;
+							
 							if((u64)send(data_s, databuf, (size_t)read, 0) < read)
 							{
 								err = 1;
 							}
+							
+							ioqueue--;
 						}
 						
 						free(databuf);
