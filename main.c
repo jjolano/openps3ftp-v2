@@ -60,8 +60,6 @@ void sysutil_callback(u64 status, u64 param, void *usrdata)
 	{
 		// Set the running variable to stop any loops from looping again
 		running = 0;
-		// Unload the network modules to make sure that any connections made are disconnected.
-		netDeinitialize();
 	}
 }
 
@@ -1228,10 +1226,10 @@ int main()
 		if(sysLv2FsOpen(OFTP_PASSWORD_FILE, SYS_O_RDONLY | SYS_O_CREAT, &fd, 0660, NULL, 0) == 0)
 		{
 			sysLv2FsRead(fd, passwd, 63, &read);
+			sysLv2FsClose(fd);
 		}
 		
 		passwd[read] = '\0';
-		sysLv2FsClose(fd);
 		
 		// set socket parameters
 		struct sockaddr_in sa;
@@ -1245,38 +1243,31 @@ int main()
 		int list_s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 		
 		// bind parameters and start listening
-		if(bind(list_s, (struct sockaddr *)&sa, sizeof(sa)) == -1
-		|| listen(list_s, OFTP_LISTEN_BACKLOG) == -1)
+		if(bind(list_s, (struct sockaddr *)&sa, sizeof(sa)) == 0
+		&& listen(list_s, OFTP_LISTEN_BACKLOG) == 0)
 		{
-			// if any of these fail, exit the program
+			// create a thread for the accept loop
+			sys_ppu_thread_t id;
+			sysThreadCreate(&id, listen_thread, (void *)&list_s, 1001, 0x100, 0, "listener");
+			
+			// register the exit callback
+			sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sysutil_callback, NULL);
+			
+			while(running)
+			{
+				sysUtilCheckCallback();
+				usleep(200);
+			}
+		}
+		else
+		{
+			// abort on failure
 			close(list_s);
-			netDeinitialize();
-			exit(-1);
 		}
-		
-		// create a thread for the accept loop
-		sys_ppu_thread_t id;
-		sysThreadCreate(&id, listen_thread, (void *)&list_s, 1001, 0x100, 0, "listener");
-		
-		// register the exit callback
-		sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sysutil_callback, NULL);
-		
-		while(running)
-		{
-			sysUtilCheckCallback();
-			usleep(200);
-		}
-	}
-	else
-	{
-		// no IP address, exit the program
-		netDeinitialize();
-		exit(-1);
 	}
 	
-	// unload modules just in case
+	// unload modules
 	netDeinitialize();
-	
 	return 0;
 }
 

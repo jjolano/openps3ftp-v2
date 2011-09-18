@@ -1,23 +1,27 @@
-OpenPS3FTP is an open source ftp server for the PS3. It has an implementation of most
-ftp commands and also supports most ftp clients. It has some compliance to the ftp RFC.
+OpenPS3FTP is an open source ftp server for the PS3. It implements all of the basic FTP
+functions, and a few advanced ones (like CHMOD). Also, it mostly complies with RFC 959.
 
-To compile the source, you will need the PSL1GHT homebrew SDK installed on your computer.
-Version 1 of the SDK is required to compile versions prior to v2.2, and version 2 of the
-SDK is required for v2.2 and later.
-
-Default login details:
+Default login:
 - username: root
-- any password is accepted unless if the passwd file (containing the password) exists
+- any password accepted
+
+If this is a development build, please use with caution. There might be stuff that isn't
+working right.
 
 ---
 
 Source code git: http://git.dashhacks.com/openps3ftp
 License: GPL (version 3)
 
+To compile the source, you must have installed the latest version of ps3toolchain on your
+build machine. This will also install PSL1GHT, which is required.
+
+Running the `make pkg` command should compile everything and create a nice pkg file for you.
+
 ---
 
 Follow me on Twitter: @jjolano
-Visit my homebrew website: http://jjolano.dashhacks.com
+Get the latest updates to my homebrew: http://jjolano.dashhacks.com
 Support me by donating: http://bit.ly/gmzGcI
 
 Thanks for using this program!
