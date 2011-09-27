@@ -26,6 +26,8 @@
 #include <fcntl.h>
 #include <ppu-types.h>
 
+#include <io/pad.h>
+
 #include <rsx/rsx.h>
 
 #include <net/net.h>
@@ -155,6 +157,12 @@ int main()
 			// start console text drawer
 			cSetDraw(FONT_COLOR_BLACK, FONT_COLOR_WHITE, width, height);
 			
+			// initialize io pad
+			ioPadInit(1);
+			
+			padInfo2 padinfo;
+			padData paddata;
+			
 			// text to draw
 			char text[256];
 			sprintf(text, "OpenPS3FTP v%s by jjolano\n\nFTP Server IP: %s\n\nIf you like my work, please donate by PayPal: http://bit.ly/gmzGcI\n\nPress SELECT + START to exit. Thank you for using this program!", OFTP_VERSION, info.ip_address);
@@ -166,6 +174,19 @@ int main()
 			while(running)
 			{
 				sysUtilCheckCallback();
+				
+				ioPadGetInfo2(&padinfo);
+				
+				if(padinfo.port_status[0])
+				{
+					ioPadGetData(0, &paddata);
+					if(paddata.BTN_SELECT && paddata.BTN_START)
+					{
+						running = 0;
+						break;
+					}
+				}
+				
 				
 				waitFlip();
 				ibuf = !ibuf;

@@ -15,7 +15,7 @@ CONTENTID	:= TOOL01-$(APPID)_00-E3D75E05E19B6152
 ICON0		:= ./ICON0.PNG
 SFOXML		:= ./sfo.xml
 
-LIBS		:= -lrt -llv2 -lnet -lnetctl -lrsx -lgcm_sys -lsysmodule -lsysutil
+LIBS		:= -lrt -llv2 -lnet -lnetctl -lio -lrsx -lgcm_sys -lsysmodule -lsysutil
 
 # Compile tools
 MAKE_SELF	:= make_self_npdrm
