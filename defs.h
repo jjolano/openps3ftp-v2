@@ -9,4 +9,7 @@
 #define OFTP_DATA_BUFSIZE	32768
 #define OFTP_LISTEN_BACKLOG	32
 
+// shared variables
+extern int running;
+extern char passwd[64];
 #endif

@@ -1,8 +1,9 @@
 [Version 3.0 - 2011]
 - Complete rewrite of most functions
-- New SITE command: FLASH (dev_blind)
-- Fixed commands STRU, and MODE.
+- New SITE command: FLASH (dev_blind toggle)
+- Fixed commands STRU and MODE. (should solve some problems on some clients)
 - STAT command now returns the program's version
+- Improved queue system for file transfers (better balancing of IO and network)
 - new git: http://git.dashhacks.com/openps3ftp
 
 [Version 2.3 - May 29, 2011]

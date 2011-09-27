@@ -10,7 +10,7 @@ working right.
 
 ---
 
-Source code git: http://git.dashhacks.com/openps3ftp
+Source code git: https://github.com/jjolano/openps3ftp
 License: GPL (version 3)
 
 To compile the source, you must have installed the latest version of ps3toolchain on your
@@ -21,7 +21,6 @@ Running the `make pkg` command should compile everything and create a nice pkg f
 ---
 
 Follow me on Twitter: @jjolano
-Get the latest updates to my homebrew: http://jjolano.dashhacks.com
 Support me by donating: http://bit.ly/gmzGcI
 
 Thanks for using this program!
