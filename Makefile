@@ -62,7 +62,6 @@ pkg: $(TARGET).elf
 	@$(MAKE_SFO) --title "$(TITLE)" --appid "$(APPID)" -f $(SFOXML) ./temp/PARAM.SFO
 	@$(MAKE_PKG) --contentid $(CONTENTID) ./temp/ $(TARGET).pkg >> /dev/null
 	@rm -Rf ./temp
-	@clean
 
 zip: pkg
 	@echo $(TARGET).zip
