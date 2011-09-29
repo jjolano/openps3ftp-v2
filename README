@@ -16,7 +16,10 @@ License: GPL (version 3)
 To compile the source, you must have installed the latest version of ps3toolchain on your
 build machine. This will also install PSL1GHT, which is required.
 
-Running the `make pkg` command should compile everything and create a nice pkg file for you.
+Running the `make pkg` command in the src folder should compile everything and create a
+nice pkg file for you.
+
+Running the build.sh script will compile OpenPS3FTP and package it into a zip.
 
 ---
 
