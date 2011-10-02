@@ -81,7 +81,7 @@ void sysutil_callback(u64 status, u64 param, void *usrdata)
 	}
 }
 
-int main()
+int main(void)
 {
 	// register the exit callback
 	sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sysutil_callback, NULL);
