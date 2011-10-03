@@ -23,8 +23,6 @@
 #include <string.h>
 #include <malloc.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <ppu-types.h>
 
 #include <io/pad.h>
 
